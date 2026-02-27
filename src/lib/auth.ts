@@ -8,6 +8,16 @@ export const auth = betterAuth({
     client,
   }),
 
+  user: {
+    additionalFields: {
+      preferences: {
+        type: "string[]",    
+        required: true,
+        defaultValue: [],    
+      },
+    },
+  },
+
   emailAndPassword: { enabled: true },
 
   socialProviders: {
