@@ -1,8 +1,8 @@
 
 export default function HomePage() {
   return (
-    <div>
-      <h1>Hello Page</h1>
-    </div>
+    <main>
+      <h1 className="text-7xl font-bold">Hello Page</h1>
+    </main>
   );
 }
