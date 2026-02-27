@@ -17,7 +17,7 @@ export const auth = betterAuth({
 
   emailAndPassword: { enabled: true },
 
-  socialProviders: undefined,/* {
+  socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
@@ -26,7 +26,7 @@ export const auth = betterAuth({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
-  }, */
+  },
 
   // opcional: joins (desde 1.4.0)
   experimental: { joins: true },
