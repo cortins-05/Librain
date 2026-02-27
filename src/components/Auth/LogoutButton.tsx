@@ -10,14 +10,14 @@ export default function LogoutButton() {
     
     async function logout() {
         await authClient.signOut({
-        fetchOptions: {
-            onSuccess: () => router.refresh(),
-        },
+            fetchOptions: {
+                onSuccess: () => router.refresh(),
+            },
         });
     }
 
   return (
-    <Button variant={'destructive'} onClick={logout}>
+    <Button variant={'destructive'} onClick={logout} className="cursor-pointer">
         Logout
     </Button>
   );
