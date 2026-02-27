@@ -1,12 +1,19 @@
-// src/db.ts
 import { MongoClient } from "mongodb";
 
 const uri = process.env.MONGODB_URI!;
+if (!uri) throw new Error("Missing MONGODB_URI");
 
-if (!uri) {
-  throw new Error("Please define MONGODB_URI in your env");
+declare global {
+  // eslint-disable-next-line no-var
+  var _mongoClient: MongoClient | undefined;
 }
 
-const client = new MongoClient(uri);
+export const client =
+  global._mongoClient ?? new MongoClient(uri);
 
-export { client };
+if (process.env.NODE_ENV !== "production") {
+  global._mongoClient = client;
+}
+
+// Opcional, por comodidad
+export const db = client.db(); // usa el DB del URI, o client.db("nombre")
