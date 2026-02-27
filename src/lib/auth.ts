@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { db } from "@/db/db";
