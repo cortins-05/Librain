@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 function getMongoUri(): string {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
-    throw new Error("Missing MONGODB_URI");
+    throw new Error("Falta MONGODB_URI");
   }
   return uri;
 }

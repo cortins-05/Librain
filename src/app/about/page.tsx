@@ -21,22 +21,23 @@ import { Separator } from "@/components/ui/separator";
 const highlights = [
   {
     title: "Entrada flexible",
-    description: "Crea tareas desde URL, texto o archivo. Soporta PDF e imagenes en el mismo flujo.",
+    description: "Añade inquietudes desde URL, texto o archivo. Soporta PDF e imágenes en el mismo flujo.",
     icon: Link2,
   },
   {
-    title: "Analisis IA util",
-    description: "Cada tarea recibe un resumen claro, un estado de madurez y un score de 0 a 100.",
+    title: "Análisis IA útil",
+    description: "Cada inquietud recibe un resumen claro, un estado de madurez y una puntuación de 0 a 100.",
     icon: BrainCog,
   },
   {
-    title: "Priorizacion real",
-    description: "Tus preferencias personales se usan para ajustar la evaluacion de cada tarea.",
+    title: "Priorización real",
+    description: "Tus preferencias personales se usan para ajustar la evaluación de cada inquietud.",
     icon: Gauge,
   },
   {
     title: "Control total",
-    description: "Marca tareas como completadas, elimina lo que no aporta y manten tu backlog limpio.",
+    description:
+      "Marca inquietudes como completadas, elimina lo que no aporta y mantén tu lista de pendientes limpia.",
     icon: CheckCircle2,
   },
 ];
@@ -44,17 +45,20 @@ const highlights = [
 const workflow = [
   {
     title: "Captura",
-    description: "Sube un PDF/imagen, pega texto o una URL y añade una descripcion corta del objetivo.",
+    description:
+      "Sube un PDF o una imagen, pega texto o una URL, y añade una descripción breve del objetivo.",
     icon: FileText,
   },
   {
-    title: "Comprension",
-    description: "Librain analiza el contenido y genera metadata practica para decidir que hacer primero.",
+    title: "Comprensión",
+    description:
+      "Librain analiza el contenido y genera metadatos prácticos para decidir qué hacer primero.",
     icon: Sparkles,
   },
   {
-    title: "Ejecucion",
-    description: "Visualiza score y estado, completa tareas y avanza con prioridades claras.",
+    title: "Ejecución",
+    description:
+      "Visualiza la puntuación y el estado, completa recomendaciones y avanza con prioridades claras.",
     icon: ListChecks,
   },
 ];
@@ -72,17 +76,17 @@ export default function AboutPage() {
             <div className="absolute -left-10 bottom-0 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
 
             <h1 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              Convierte informacion suelta en tareas accionables.
+              Convierte información suelta en recomendaciones accionables.
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Librain centraliza lo que guardas durante el dia y lo transforma en decisiones claras:
-              resumen IA, estado de madurez y prioridad para que sepas que hacer primero.
+            <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg font-fira-sans">
+              Librain centraliza lo que guardas durante el día y lo transforma en decisiones claras:
+              resumen IA, estado de madurez y prioridad para que sepas qué hacer primero.
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild size="lg">
                 <Link href="/actions/addTask">
-                  Crear tarea <ArrowRight />
+                  Crear inquietud <ArrowRight />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
@@ -98,7 +102,7 @@ export default function AboutPage() {
                 <FileText className="size-3.5" /> PDF y texto
               </Badge>
               <Badge variant="secondary" className="rounded-full px-3 py-1">
-                <ImageIcon className="size-3.5" /> Imagenes
+                <ImageIcon className="size-3.5" /> Imágenes
               </Badge>
             </div>
           </div>
@@ -132,9 +136,9 @@ export default function AboutPage() {
         <div className="grid gap-4 grid-cols-1">
           <Card className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
             <CardHeader>
-              <CardTitle className="text-xl">Como funciona en la practica</CardTitle>
+              <CardTitle className="text-xl">Cómo funciona en la práctica</CardTitle>
               <CardDescription>
-                Flujo rapido para pasar de idea a accion sin perder contexto.
+                Flujo rápido para pasar de la idea a la acción sin perder contexto.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -170,7 +174,7 @@ export default function AboutPage() {
               <div>
                 <p className="text-sm font-semibold">Privado por cuenta</p>
                 <p className="text-sm text-muted-foreground">
-                  Tu espacio esta protegido por login y sesion activa.
+                  Tu espacio está protegido por inicio de sesión y sesión activa.
                 </p>
               </div>
             </div>
@@ -182,7 +186,7 @@ export default function AboutPage() {
               <div>
                 <p className="text-sm font-semibold">Personalizado para ti</p>
                 <p className="text-sm text-muted-foreground">
-                  Las preferencias de tu perfil mejoran la priorizacion de resultados.
+                  Las preferencias de tu perfil mejoran la priorización de resultados.
                 </p>
               </div>
             </div>
@@ -192,9 +196,9 @@ export default function AboutPage() {
                 <Gauge className="size-4.5" />
               </div>
               <div>
-                <p className="text-sm font-semibold">Decisiones mas rapidas</p>
+                <p className="text-sm font-semibold">Decisiones más rápidas</p>
                 <p className="text-sm text-muted-foreground">
-                  Menos ruido, mas claridad para ejecutar tareas con impacto.
+                  Menos ruido, más claridad para ejecutar con impacto.
                 </p>
               </div>
             </div>

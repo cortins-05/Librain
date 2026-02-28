@@ -45,7 +45,7 @@ export default function TaskView({
 
   const { id, name, description, descriptionIA, state, score, createdAt, completedAt } =
     task;
-  const displayName = name.trim() || "Tarea sin titulo";
+  const displayName = name.trim() || "inquietud sin título";
 
   const isCompleted = Boolean(completedAt) || state === "actionable";
   const createdLabel = safeDateLabel(createdAt);
@@ -64,14 +64,14 @@ export default function TaskView({
 
       if (!res.ok) {
         const msg = await res.text().catch(() => "");
-        throw new Error(msg || `Delete failed (${res.status})`);
+        throw new Error(msg || `Error al eliminar (${res.status})`);
       }
 
       onDeleted?.(id);
       router.refresh();
     } catch (e) {
       console.error(e);
-      alert("No se pudo borrar la tarea.");
+      alert("No se pudo borrar la inquietud.");
     } finally {
       setIsDeleting(false);
     }
@@ -83,7 +83,7 @@ export default function TaskView({
       router.refresh();
     } catch (e) {
       console.error(e);
-      alert("No se pudo actualizar el estado de la tarea.");
+      alert("No se pudo actualizar el estado de la inquietud.");
     }
   }
 
@@ -104,7 +104,7 @@ export default function TaskView({
                 className="rounded-full border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary"
               >
                 <Star className="size-3.5" />
-                score {score}
+                puntuación {score}
               </Badge>
 
               <Badge
@@ -146,7 +146,7 @@ export default function TaskView({
           <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-background/40 p-3">
             <CalendarDays className="size-4 text-muted-foreground" />
             <div className="min-w-0">
-              <p className="text-[11px] font-medium text-muted-foreground">Created</p>
+              <p className="text-[11px] font-medium text-muted-foreground">Creada</p>
               <p className="truncate text-sm">{createdLabel}</p>
             </div>
           </div>
@@ -157,13 +157,13 @@ export default function TaskView({
             onClick={toggleCompleted}
           >
             <div className="flex w-full items-center gap-2 text-left">
-              {isCompleted ? (
+              {completedLabel ? (
                 <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
               ) : (
                 <Circle className="size-4 text-muted-foreground" />
               )}
               <div className="min-w-0">
-                <p className="text-[11px] font-medium text-muted-foreground">Completed</p>
+                <p className="text-[11px] font-medium text-muted-foreground">Completada</p>
                 <p className="truncate text-sm">{completedLabel ?? "Pendiente"}</p>
               </div>
             </div>
@@ -174,7 +174,7 @@ export default function TaskView({
       <CardFooter className="flex items-center justify-between border-t border-border/70 bg-muted/15 px-6 py-3">
         <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
           <Clock3 className="size-3.5" />
-          {isCompleted ? "Completada" : "Pendiente de accion"}
+          {isCompleted ? "Completada" : "Pendiente de acción"}
         </span>
         <Button
           variant="destructive"
@@ -182,8 +182,8 @@ export default function TaskView({
           onClick={deleteTask}
           disabled={isDeleting}
           className="transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100"
-          aria-label="Delete task"
-          title="Delete"
+          aria-label="Eliminar inquietud"
+          title="Eliminar"
         >
           {isDeleting ? (
             <Loader2 className="size-4 animate-spin" />
@@ -195,4 +195,3 @@ export default function TaskView({
     </Card>
   );
 }
-

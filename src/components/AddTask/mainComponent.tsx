@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type ComponentType } from "react";
+import { useRef, useState, type ComponentType } from "react";
 import { toast } from "sonner";
 import {
   FileText,
@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Texinquietud } from "@/components/ui/textarea";
 
 type ResourceType = "url" | "file" | "text";
 
@@ -51,13 +51,13 @@ const RESOURCE_META: Record<
     placeholder: "https://...",
   },
   file: {
-    label: "File",
+    label: "Archivo",
     hint: "Soporta PDF, imagenes, audio y video.",
     icon: Upload,
     placeholder: "",
   },
   text: {
-    label: "Text",
+    label: "Texto",
     hint: "Pega apuntes, ideas o contenido libre para analizar.",
     icon: Type,
     placeholder: "Pega aqui tu texto...",
@@ -72,6 +72,7 @@ export default function MainComponentAddTask() {
   const [value, setValue] = useState("");
   const [fileValue, setFileValue] = useState<File | null>(null);
   const [description, setDescription] = useState("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const hasInputValue = resource === "file" ? Boolean(fileValue) : value.trim().length > 0;
   const canSubmit = Boolean(resource && hasInputValue);
@@ -122,7 +123,7 @@ export default function MainComponentAddTask() {
         | null;
 
       if (!response.ok) {
-        const errorMessage = payload?.error ?? "No se pudo guardar la tarea";
+        const errorMessage = payload?.error ?? "No se pudo guardar la inquietud";
         console.error("Error al guardar:", errorMessage);
         toast(errorMessage);
         return;
@@ -136,6 +137,13 @@ export default function MainComponentAddTask() {
         );
       } else {
         toast("Guardado con exito");
+      }
+
+      setValue("");
+      setFileValue(null);
+      setDescription("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
 
       router.push("/");
@@ -157,7 +165,7 @@ export default function MainComponentAddTask() {
             Selecciona el tipo de recurso
           </CardTitle>
           <CardDescription>
-            Elige como quieres crear la tarea: URL, archivo o texto libre.
+            Elige como quieres crear la inquietud: URL, archivo o texto libre.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -167,6 +175,9 @@ export default function MainComponentAddTask() {
               setValue("");
               setFileValue(null);
               setDescription("");
+              if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+              }
             }}
           >
             <SelectTrigger className="w-full sm:w-65">
@@ -175,8 +186,8 @@ export default function MainComponentAddTask() {
             <SelectContent>
               <SelectGroup>
                 <SelectItem value="url">URL</SelectItem>
-                <SelectItem value="file">File</SelectItem>
-                <SelectItem value="text">Text</SelectItem>
+                <SelectItem value="file">Archivo</SelectItem>
+                <SelectItem value="text">Texto</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -223,7 +234,7 @@ export default function MainComponentAddTask() {
             ) : null}
 
             {resource === "text" ? (
-              <Textarea
+              <Texinquietud
                 onChange={(event) => setValue(event.target.value)}
                 value={value}
                 placeholder={selectedResource.placeholder}
@@ -234,8 +245,12 @@ export default function MainComponentAddTask() {
             {resource === "file" ? (
               <div className="space-y-3">
                 <Input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*,audio/*,video/*,application/pdf"
+                  onClick={(event) => {
+                    event.currentTarget.value = "";
+                  }}
                   onChange={(event) => {
                     const selectedFile = event.target.files?.[0] ?? null;
                     setFileValue(selectedFile);
@@ -269,7 +284,7 @@ export default function MainComponentAddTask() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Textarea
+            <Texinquietud
               onChange={(event) => setDescription(event.target.value)}
               value={description}
               className="min-h-32"
@@ -303,7 +318,7 @@ export default function MainComponentAddTask() {
               ) : (
                 <span className="inline-flex items-center gap-2">
                   <Sparkles className="size-4" />
-                  Guardar tarea
+                  Guardar inquietud
                 </span>
               )}
             </Button>

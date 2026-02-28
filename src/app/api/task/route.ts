@@ -191,7 +191,7 @@ export async function POST(req: Request) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
     await dbConnect();
@@ -213,7 +213,7 @@ export async function POST(req: Request) {
 
       const file = form.get("file") as File | null;
       if (!file) {
-        return NextResponse.json({ error: "No file provided" }, { status: 400 });
+        return NextResponse.json({ error: "No se proporcionó ningún archivo" }, { status: 400 });
       }
 
       const kind = guessKindFromFile(file);
@@ -228,7 +228,7 @@ export async function POST(req: Request) {
         extracted = await ImageExtract({ imageUrl: dataUrl });
       } else if (kind === "video") {
         return NextResponse.json(
-          { error: "Para vídeo sube a storage y envía una URL (resource=url). No se acepta vídeo como File en este endpoint." },
+          { error: "Para vídeo, súbelo a storage y envía una URL (resource=url). Este endpoint no acepta vídeo como archivo." },
           { status: 400 }
         );
       } else if (kind === "audio") {
@@ -250,8 +250,8 @@ export async function POST(req: Request) {
       value = safeTrim(body?.value);
       description = safeTrim(body?.description);
 
-      if (!resource) return NextResponse.json({ error: "Missing resource" }, { status: 400 });
-      if (!value) return NextResponse.json({ error: "Missing value" }, { status: 400 });
+      if (!resource) return NextResponse.json({ error: "Falta el recurso" }, { status: 400 });
+      if (!value) return NextResponse.json({ error: "Falta el valor" }, { status: 400 });
 
       if (resource === "url") {
         const lower = value.toLowerCase();
@@ -266,7 +266,7 @@ export async function POST(req: Request) {
       } else if (resource === "text") {
         extracted = await TextExtract(value);
       } else {
-        return NextResponse.json({ error: "Invalid resource for JSON body" }, { status: 400 });
+        return NextResponse.json({ error: "Recurso no válido para un cuerpo JSON" }, { status: 400 });
       }
     }
 
@@ -294,7 +294,7 @@ export async function POST(req: Request) {
       ai: { fallback: false, error: null },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = err instanceof Error ? err.message : "Error desconocido";
     console.error(err);
     return NextResponse.json(
       { error: message, ai: { fallback: true, error: message } },

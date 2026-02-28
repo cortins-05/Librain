@@ -16,7 +16,7 @@ import {
   UserRound,
   WandSparkles,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -32,7 +32,7 @@ interface ProfileClientProps {
 }
 
 function getInitials(name: string, email: string) {
-  if (name && name.trim().length > 0 && name !== "Anonymous User") {
+  if (name && name.trim().length > 0 && name !== "Usuario anónimo") {
     const parts = name.trim().split(/\s+/);
     const first = parts[0]?.[0] ?? "";
     const second = parts[1]?.[0] ?? "";
@@ -49,7 +49,7 @@ export default function ProfileClient({
   joinedDate,
 }: ProfileClientProps) {
   const avatarSrc = image && image.trim().length > 0 ? image : "/auth/default.png";
-  const safeName = name.trim() || "Anonymous User";
+  const safeName = name.trim() || "Usuario anónimo";
   const router = useRouter();
 
   const [addition, setAddition] = useState(false);
@@ -62,9 +62,15 @@ export default function ProfileClient({
     router.refresh();
   }
 
+  useEffect(()=>{
+    if(preferences.length<4){
+      toast("AVISO: Para que la IA sea más precisa añade como mínimo 4 preferencias");
+    }
+  },[preferences.length]);
+
   async function addPreference(){
     if(!preferenceName||preferenceName==""){
-      toast("Error al introducir la preferencia, revisa el campo.")
+      toast("Error al introducir la preferencia; revisa el campo.")
       return;
     }
     await addPreferenceAction(preferenceName);
@@ -83,7 +89,7 @@ export default function ProfileClient({
             <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
 
             <Badge variant="outline" className="mb-4 rounded-full px-3 py-1 text-xs tracking-wide">
-              Profile
+              Perfil
             </Badge>
 
             <div className="relative flex flex-wrap items-center gap-5">
@@ -124,21 +130,21 @@ export default function ProfileClient({
               <div className="rounded-xl border border-border/70 bg-background/45 p-4">
                 <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   <CalendarDays className="size-3.5" />
-                  Se unio
+                  Se unió
                 </p>
                 <p className="truncate text-sm font-semibold text-foreground">{joinedDate}</p>
               </div>
             </div>
 
             <div className="mt-10 rounded-xl border border-border/70 bg-background/45 p-4 flex flex-col">
-              <p className="flex gap-3"><Sparkles />Preferences <button className="ml-auto transition-all hover:rotate-45" onClick={()=>{setAddition(true)}}> <Plus/> </button></p>
+              <p className="flex gap-3"><Sparkles />Preferencias <button className="ml-auto transition-all hover:rotate-45" onClick={()=>{setAddition(true)}}> <Plus/> </button></p>
               {
                 addition
                 &&
                 <>
                   <Separator className="my-5" />
                   <span className="flex gap-3">
-                    <Input type="text" placeholder="Preference Name..." onChange={(e)=>{setPreferenceName(e.target.value)}} />
+                    <Input type="text" placeholder="Nombre de la preferencia..." onChange={(e)=>{setPreferenceName(e.target.value)}} />
                     {
                       preferenceName
                       &&
@@ -177,7 +183,7 @@ export default function ProfileClient({
               <div className="space-y-1">
                 <p className="text-sm font-semibold">Personalizacion activa</p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Cuantas mas preferencias tengas, mejor se ajusta el score de prioridades.
+                  Cuantas más preferencias tengas, mejor se ajusta la puntuación de prioridades.
                 </p>
               </div>
             </CardContent>
@@ -191,7 +197,7 @@ export default function ProfileClient({
               <div className="space-y-1">
                 <p className="text-sm font-semibold">Cuenta lista para trabajar</p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Tu perfil esta activo y preparado para guardar y priorizar nuevas tareas.
+                  Tu perfil está activo y preparado para guardar y priorizar nuevas inquietudes.
                 </p>
               </div>
             </CardContent>

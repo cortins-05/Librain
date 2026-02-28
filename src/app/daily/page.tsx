@@ -33,19 +33,19 @@ const stateUI: Record<
   }
 > = {
   raw: {
-    label: "raw",
+    label: "inicial",
     badgeClass: "border-muted-foreground/20 bg-muted/40 text-muted-foreground",
   },
   usable: {
-    label: "usable",
+    label: "utilizable",
     badgeClass: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-400",
   },
   solid: {
-    label: "solid",
+    label: "sólida",
     badgeClass: "border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-400",
   },
   actionable: {
-    label: "actionable",
+    label: "accionable",
     badgeClass:
       "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   },
@@ -62,9 +62,9 @@ function normalizeScore(value: unknown): number {
 }
 
 function safeDateLabel(value: unknown): string {
-  if (!value) return "N/A";
+  if (!value) return "No disponible";
   const parsed = value instanceof Date ? value : new Date(value as string | number);
-  if (Number.isNaN(parsed.getTime())) return "N/A";
+  if (Number.isNaN(parsed.getTime())) return "No disponible";
   return parsed.toLocaleString("es-ES", {
     day: "2-digit",
     month: "short",
@@ -87,15 +87,15 @@ export default async function DailyTaskPage() {
           <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 duration-500">
             <CardContent className="space-y-3 p-8">
               <Badge variant="outline" className="rounded-full px-3 py-1 text-xs tracking-wide">
-                Daily Focus
+                Enfoque diario
               </Badge>
-              <h1 className="text-2xl font-bold sm:text-3xl">Inicia sesion para ver tu tarea del dia</h1>
+              <h1 className="text-2xl font-bold sm:text-3xl">Inicia sesión para ver tu recomendación del día</h1>
               <p className="text-muted-foreground">
-                Necesitamos tu sesion para cargar tus tareas y elegir la mas prioritaria.
+                Necesitamos tu sesión para cargar tus inquietudes y elegir la más prioritaria.
               </p>
               <Button asChild>
                 <Link href="/login">
-                  Ir a login
+                  Ir al inicio de sesión
                   <ArrowRight />
                 </Link>
               </Button>
@@ -132,14 +132,14 @@ export default async function DailyTaskPage() {
             <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
 
             <Badge variant="outline" className="mb-4 rounded-full px-3 py-1 text-xs tracking-wide">
-              Daily Focus
+              Enfoque diario
             </Badge>
             <h1 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              Tu task del dia.
+              Tu recomendación del día.
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Librain selecciona tu tarea con mayor score para ayudarte a ejecutar lo mas
-              importante primero.
+              Librain te aconseja en base a tus preferencias.
+              Lo importante primero.
             </p>
           </div>
         </section>
@@ -150,14 +150,14 @@ export default async function DailyTaskPage() {
               <span className="inline-flex rounded-lg border border-primary/20 bg-primary/10 p-2 text-primary">
                 <ListTodo className="size-5" />
               </span>
-              <h2 className="text-2xl font-semibold">Todavia no tienes tareas</h2>
+              <h2 className="text-2xl font-semibold">Todavía no tienes inquietudes</h2>
               <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Crea tu primera tarea para que podamos calcular la prioridad diaria y mostrarte
-                una recomendacion accionable.
+                Crea tu primera inquietud para que podamos calcular la prioridad diaria y mostrarte
+                una recomendación accionable.
               </p>
               <Button asChild size="lg">
                 <Link href="/actions/addTask">
-                  Crear nueva tarea
+                  Crear nueva inquietud
                   <ArrowRight />
                 </Link>
               </Button>
@@ -168,7 +168,7 @@ export default async function DailyTaskPage() {
             const name =
               typeof topTask.name === "string" && topTask.name.trim().length > 0
                 ? topTask.name.trim()
-                : "Tarea sin titulo";
+                : "Recomendación sin título";
             const description = typeof topTask.description === "string" ? topTask.description : "";
             const descriptionIA =
               typeof topTask.descriptionIA === "string" ? topTask.descriptionIA : "";
@@ -195,7 +195,7 @@ export default async function DailyTaskPage() {
                         className="rounded-full border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
                       >
                         <Target className="size-3.5" />
-                        Task del dia
+                        Recomendación del día
                       </Badge>
                       <h2 className="max-w-3xl text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">
                         {name}
@@ -221,7 +221,7 @@ export default async function DailyTaskPage() {
                       className="rounded-full border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary"
                     >
                       <Star className="size-3.5" />
-                      score {score}
+                      puntuación {score}
                     </Badge>
                     {category ? (
                       <Badge
@@ -256,7 +256,7 @@ export default async function DailyTaskPage() {
                     <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-background/40 p-3">
                       <CalendarDays className="size-4 text-muted-foreground" />
                       <div className="min-w-0">
-                        <p className="text-[11px] font-medium text-muted-foreground">Created</p>
+                        <p className="text-[11px] font-medium text-muted-foreground">Creada</p>
                         <p className="truncate text-sm">{createdAt}</p>
                       </div>
                     </div>
@@ -265,13 +265,13 @@ export default async function DailyTaskPage() {
                       <CheckCircle2
                         className={cn(
                           "size-4",
-                          isCompleted
+                          completedAt!="Pendiente"
                             ? "text-emerald-600 dark:text-emerald-400"
                             : "text-muted-foreground"
                         )}
                       />
                       <div className="min-w-0">
-                        <p className="text-[11px] font-medium text-muted-foreground">Completed</p>
+                        <p className="text-[11px] font-medium text-muted-foreground">Completada</p>
                         <p className="truncate text-sm">{completedAt}</p>
                       </div>
                     </div>
@@ -280,11 +280,11 @@ export default async function DailyTaskPage() {
 
                 <CardFooter className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 bg-muted/15 px-6 py-4">
                   <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {isCompleted ? "Completada" : "Pendiente de accion"}
+                    {isCompleted ? "Completada" : "Pendiente de acción"}
                   </span>
                   <Button asChild variant="outline">
                     <Link href="/">
-                      Ver todas las tareas
+                      Ver todas las inquietudes
                       <ArrowRight />
                     </Link>
                   </Button>

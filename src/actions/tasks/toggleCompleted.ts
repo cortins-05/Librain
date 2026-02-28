@@ -8,13 +8,13 @@ export async function toggleCompletedAction(id: string) {
   await dbConnect();
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new Error("Invalid id");
+    throw new Error("Id no válido");
   }
 
   const task = await StoredModel.findById(id).select("completedAt");
 
   if (!task) {
-    throw new Error("Task not found");
+    throw new Error("Inquietud no encontrada");
   }
 
   const updated = await StoredModel.findByIdAndUpdate(

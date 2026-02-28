@@ -13,17 +13,17 @@ interface RouteContext {
 export async function DELETE(_request: Request, context: RouteContext) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
   const params = await context.params;
   const id = typeof params?.id === "string" ? params.id.trim() : "";
   if (!id) {
-    return NextResponse.json({ error: "Missing task id" }, { status: 400 });
+    return NextResponse.json({ error: "Falta el id de la inquietud" }, { status: 400 });
   }
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    return NextResponse.json({ error: "Invalid task id" }, { status: 400 });
+    return NextResponse.json({ error: "El id de la inquietud no es válido" }, { status: 400 });
   }
 
   try {
@@ -35,12 +35,12 @@ export async function DELETE(_request: Request, context: RouteContext) {
     });
 
     if (!deleted) {
-      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      return NextResponse.json({ error: "inquietud no encontrada" }, { status: 404 });
     }
 
     return NextResponse.json({ ok: true, deletedId: id });
   } catch (err) {
     console.error("[DELETE /api/task/:id] database error", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

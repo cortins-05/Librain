@@ -75,27 +75,27 @@ export default async function HomePage() {
             <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
 
             <Badge variant="outline" className="mb-4 rounded-full px-3 py-1 text-xs tracking-wide">
-              Librain Workspace
+              Espacio Librain
             </Badge>
 
             <h1 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              Tu panel de tareas inteligentes.
+              Tu panel de recomendaciones inteligentes.
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Reune ideas, notas y recursos en un solo lugar. Librain los convierte en tareas
-              claras con score y estado para ayudarte a decidir que ejecutar primero.
+            <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg font-fira-sans">
+              Reúne ideas, notas y recursos en un solo lugar. Librain los convierte en recomendaciones
+              claras con puntuación y estado para ayudarte a decidir qué ejecutar primero.
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild size="lg">
                 <Link href="/actions/addTask">
                   <Plus />
-                  Nueva tarea
+                  Nueva<span className="text-blue-800">inquietud</span>
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link href="/about">
-                  Como funciona
+                  Cómo funciona
                   <ArrowRight />
                 </Link>
               </Button>
@@ -109,7 +109,7 @@ export default async function HomePage() {
               <span className="inline-flex rounded-lg border border-primary/20 bg-primary/10 p-2 text-primary">
                 <ListTodo className="size-4" />
               </span>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total tasks</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total de <span className="text-red-400">ya lo haré...</span></p>
               <p className="text-2xl font-semibold">{totalTasks}</p>
             </CardContent>
           </Card>
@@ -119,7 +119,7 @@ export default async function HomePage() {
               <span className="inline-flex rounded-lg border border-sky-500/20 bg-sky-500/10 p-2 text-sky-600 dark:text-sky-400">
                 <CheckCircle2 className="size-4" />
               </span>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Completed</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Completadas</p>
               <p className="text-2xl font-semibold">{completedTasks}</p>
             </CardContent>
           </Card>
