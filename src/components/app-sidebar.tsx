@@ -6,11 +6,24 @@ import {
   SidebarGroup,
   SidebarHeader,
 } from "@/components/ui/sidebar"
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
-export function AppSidebar() {
+export async function AppSidebar() {
+
+  const session = await auth.api.getSession({headers: await headers()});
+
+  console.log(session?.user)
+
   return (
     <Sidebar>
-      <SidebarHeader />
+      <SidebarHeader>
+        <Avatar>
+          <AvatarImage src={session?.user.image ?? ""} />
+          <AvatarFallback>{session?.user.name}</AvatarFallback>
+        </Avatar>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup />
         <SidebarGroup />
