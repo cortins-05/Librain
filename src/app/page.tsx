@@ -4,22 +4,14 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, ListTodo, Plus } from "lucide-react";
 
 import ViewTasks from "@/components/Tasks/ViewTasks";
-import type { TaskListItem, TaskListState } from "@/components/Tasks/types";
+import type { TaskListItem } from "@/components/Tasks/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { dbConnect } from "@/db/dbConnect";
-import StoredModel, { STORED_STATES } from "@/db/Models/Task/Task.model";
+import StoredModel from "@/db/Models/Task/Task.model";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-
-const TASK_STATE_SET = new Set<TaskListState>(STORED_STATES);
-
-function normalizeTaskState(value: unknown): TaskListState {
-  return typeof value === "string" && TASK_STATE_SET.has(value as TaskListState)
-    ? (value as TaskListState)
-    : "raw";
-}
 
 function toIsoOrNow(value: unknown): string {
   if (value instanceof Date) {
@@ -52,7 +44,6 @@ export default async function HomePage() {
     description: typeof task.description === "string" ? task.description : "",
     descriptionIA:
       typeof task.descriptionIA === "string" ? task.descriptionIA : "",
-    state: normalizeTaskState(task.state),
     score:
       typeof task.score === "number"
         ? Math.max(0, Math.min(100, Math.round(task.score)))
@@ -63,7 +54,7 @@ export default async function HomePage() {
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(
-    (task) => Boolean(task.completedAt) || task.state === "actionable"
+    (task) => Boolean(task.completedAt)
   ).length;
 
   return (

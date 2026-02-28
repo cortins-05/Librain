@@ -1,11 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { StoredState } from "@/db/Models/Task/Task.model";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
 
 type GeminiStoredResponse = {
   name: string;
-  state: StoredState;
   score: number;
   descriptionIA: string;
 };
@@ -266,7 +264,6 @@ Debes responder EXCLUSIVAMENTE con JSON valido, sin markdown.
 Schema:
 {
   "name": "titulo claro y conciso (max 60 caracteres)",
-  "state": "raw | usable | solid | actionable",
   "score": 0,
   "descriptionIA": "texto plano maximo 150 caracteres"
 }
