@@ -16,7 +16,7 @@ import {
   UserRound,
   WandSparkles,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -62,11 +62,14 @@ export default function ProfileClient({
     router.refresh();
   }
 
-  useEffect(()=>{
-    if(preferences.length<4){
+  const hasShownToast = useRef(false);
+
+  useEffect(() => {
+    if (!hasShownToast.current && preferences.length < 4) {
       toast("AVISO: Para que la IA sea más precisa añade como mínimo 4 preferencias");
+      hasShownToast.current = true;
     }
-  },[preferences.length]);
+  }, [preferences.length]);
 
   async function addPreference(){
     if(!preferenceName||preferenceName==""){

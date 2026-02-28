@@ -41,7 +41,10 @@ export default async function HomePage() {
 
   const session = await auth.api.getSession({headers: await headers()});
 
-  const tasksFromDb = await StoredModel.find({ user: session!.user.id }).sort({ createdAt: -1 }).lean();
+  const tasksFromDb = await StoredModel
+  .find({ user: session!.user.id })
+  .sort({ score: -1 }) // 👈 mayor a menor
+  .lean();
   const tasks: TaskListItem[] = tasksFromDb.map((task) => ({
     id: String(task._id),
     userId: String(task.user),

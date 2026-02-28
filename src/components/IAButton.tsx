@@ -4,6 +4,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogOverlay,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { BrainCog, Loader2, Send } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import Image from 'next/image';
 
 type ChatMessage = {
   id: string;
@@ -115,14 +117,20 @@ export default function IAButton({ className }: { className: string }) {
 
   return (
     <Dialog>
+      <DialogOverlay className="backdrop-blur" />
       <DialogTrigger asChild className={className}>
         <Button
-          variant="secondary"
+          variant="default"
           size="icon-lg"
-          className="gap-2 hover:border-primary transition-all p-8 px-11 rounded-2xl"
+          className="flex items-center justify-center gap-2 hover:border-primary transition-all rounded-2xl"
         >
-          <BrainCog className="w-4 h-4 text-primary" />
-          Librain
+          <Image 
+            src={"/LibrainAI.png"}
+            alt="Librain"
+            width={120}
+            height={120}
+            style={{ objectFit: "contain" }}
+          />
         </Button>
       </DialogTrigger>
 
