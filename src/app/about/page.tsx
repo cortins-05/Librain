@@ -59,17 +59,6 @@ const workflow = [
   },
 ];
 
-const states = [
-  { label: "raw", meaning: "Informacion inicial, aun poco util.", tone: "bg-muted text-muted-foreground" },
-  { label: "usable", meaning: "Ya puede usarse con supervision.", tone: "bg-sky-500/10 text-sky-700 dark:text-sky-400" },
-  { label: "solid", meaning: "Contenido bien estructurado y confiable.", tone: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400" },
-  {
-    label: "actionable",
-    meaning: "Lista para ejecutar con alta claridad.",
-    tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  },
-];
-
 export default function AboutPage() {
   return (
     <section className="relative isolate flex-1 overflow-y-auto px-4 py-8 md:px-10 md:py-10">
@@ -140,7 +129,7 @@ export default function AboutPage() {
           })}
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
+        <div className="grid gap-4 grid-cols-1">
           <Card className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
             <CardHeader>
               <CardTitle className="text-xl">Como funciona en la practica</CardTitle>
@@ -168,25 +157,6 @@ export default function AboutPage() {
                   </div>
                 );
               })}
-            </CardContent>
-          </Card>
-
-          <Card className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
-            <CardHeader>
-              <CardTitle className="text-xl">Estados de una tarea</CardTitle>
-              <CardDescription>
-                Cada estado te indica cuanta accion puedes tomar ahora.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {states.map((state) => (
-                <div key={state.label} className="rounded-xl border border-border/70 bg-muted/20 p-3">
-                  <div className="flex items-center gap-2">
-                    <Badge className={state.tone}>{state.label}</Badge>
-                    <span className="text-sm text-muted-foreground">{state.meaning}</span>
-                  </div>
-                </div>
-              ))}
             </CardContent>
           </Card>
         </div>

@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 
 import { auth } from "@/lib/auth";
 import { dbConnect } from "@/db/dbConnect";
-import Stored from "@/db/Models/Stored/main.model";
+import Stored from "@/db/Models/Task/Task.model";
 
 interface RouteContext {
   params: Promise<{ id?: string }>;

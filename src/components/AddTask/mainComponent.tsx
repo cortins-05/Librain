@@ -52,7 +52,7 @@ const RESOURCE_META: Record<
   },
   file: {
     label: "File",
-    hint: "Soporta PDF e imagenes (png, jpg, jpeg, webp, gif, bmp).",
+    hint: "Soporta PDF, imagenes, audio y video.",
     icon: Upload,
     placeholder: "",
   },
@@ -74,14 +74,14 @@ export default function MainComponentAddTask() {
   const [description, setDescription] = useState("");
 
   const hasInputValue = resource === "file" ? Boolean(fileValue) : value.trim().length > 0;
-  const canSubmit = Boolean(resource && hasInputValue && description.trim().length > 0);
+  const canSubmit = Boolean(resource && hasInputValue);
   const selectedResource = resource ? RESOURCE_META[resource] : null;
 
   async function saveTask() {
     const trimmedDescription = description.trim();
     const trimmedValue = value.trim();
 
-    if (!resource || !trimmedDescription) return;
+    if (!resource) return;
     if (resource === "file" && !fileValue) return;
     if (resource !== "file" && !trimmedValue) return;
 
@@ -235,7 +235,7 @@ export default function MainComponentAddTask() {
               <div className="space-y-3">
                 <Input
                   type="file"
-                  accept="application/pdf,image/*"
+                  accept="image/*,audio/*,video/*,application/pdf"
                   onChange={(event) => {
                     const selectedFile = event.target.files?.[0] ?? null;
                     setFileValue(selectedFile);

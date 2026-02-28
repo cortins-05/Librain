@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ListTodo, Plus, Target } from "lucide-react";
+import { ArrowRight, CheckCircle2, ListTodo, Plus } from "lucide-react";
 
 import ViewTasks from "@/components/Tasks/ViewTasks";
 import type { TaskListItem, TaskListState } from "@/components/Tasks/types";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { dbConnect } from "@/db/dbConnect";
-import StoredModel, { STORED_STATES } from "@/db/Models/Stored/main.model";
+import StoredModel, { STORED_STATES } from "@/db/Models/Task/Task.model";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -59,7 +59,6 @@ export default async function HomePage() {
   }));
 
   const totalTasks = tasks.length;
-  const actionableTasks = tasks.filter((task) => task.state === "actionable").length;
   const completedTasks = tasks.filter(
     (task) => Boolean(task.completedAt) || task.state === "actionable"
   ).length;
@@ -104,7 +103,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="grid gap-4 grid-cols-3">
+        <section className="grid gap-4 grid-cols-2">
           <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 backdrop-blur duration-500">
             <CardContent className="space-y-2 py-6">
               <span className="inline-flex rounded-lg border border-primary/20 bg-primary/10 p-2 text-primary">
@@ -112,16 +111,6 @@ export default async function HomePage() {
               </span>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Total tasks</p>
               <p className="text-2xl font-semibold">{totalTasks}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 backdrop-blur duration-500 [animation-delay:70ms]">
-            <CardContent className="space-y-2 py-6">
-              <span className="inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
-                <Target className="size-4" />
-              </span>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Actionable</p>
-              <p className="text-2xl font-semibold">{actionableTasks}</p>
             </CardContent>
           </Card>
 

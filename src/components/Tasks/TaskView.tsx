@@ -1,12 +1,11 @@
 ﻿"use client";
 
-import { useState, type ComponentType } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import {
   CalendarDays,
   CheckCircle2,
@@ -20,38 +19,7 @@ import {
 } from "lucide-react";
 
 import { toggleCompletedAction } from "@/actions/tasks/toggleCompleted";
-import type { TaskListItem, TaskListState } from "./types";
-
-const stateUI: Record<
-  TaskListState,
-  {
-    label: string;
-    badgeClass: string;
-    icon: ComponentType<{ className?: string }>;
-  }
-> = {
-  raw: {
-    label: "raw",
-    badgeClass: "border-muted-foreground/20 bg-muted/40 text-muted-foreground",
-    icon: Circle,
-  },
-  usable: {
-    label: "usable",
-    badgeClass: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-400",
-    icon: Circle,
-  },
-  solid: {
-    label: "solid",
-    badgeClass: "border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-400",
-    icon: Circle,
-  },
-  actionable: {
-    label: "actionable",
-    badgeClass:
-      "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-    icon: CheckCircle2,
-  },
-};
+import type { TaskListItem } from "./types";
 
 function safeDateLabel(value: string) {
   const date = new Date(value);
@@ -83,9 +51,6 @@ export default function TaskView({
   const createdLabel = safeDateLabel(createdAt);
   const completedLabel = completedAt ? safeDateLabel(completedAt) : null;
   const shortId = id.length > 12 ? `${id.slice(0, 4)}...${id.slice(-4)}` : id;
-
-  const ui = stateUI[state];
-  const StateIcon = ui.icon;
 
   async function deleteTask() {
     if (isDeleting) return;
@@ -134,17 +99,6 @@ export default function TaskView({
             </h2>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide",
-                  ui.badgeClass
-                )}
-              >
-                <StateIcon className="size-3.5" />
-                {ui.label}
-              </Badge>
-
               <Badge
                 variant="outline"
                 className="rounded-full border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary"

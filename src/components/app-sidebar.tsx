@@ -20,6 +20,7 @@ import {
   Home,
   Info,
   ChevronRight,
+  Star,
 } from "lucide-react";
 
 function getInitials(name?: string | null, email?: string | null) {
@@ -35,6 +36,11 @@ const navMain = [
     label: "Inicio",
     href: "/",
     icon: Home,
+  },
+  {
+    label: "Tarea Diaria",
+    href: "/daily",
+    icon: Star
   },
   {
     label: "About Us",

@@ -1,7 +1,7 @@
 "use server";
 
 import { dbConnect } from "@/db/dbConnect";
-import StoredModel from "@/db/Models/Stored/main.model";
+import StoredModel from "@/db/Models/Task/Task.model";
 import mongoose from "mongoose";
 
 export async function toggleCompletedAction(id: string) {

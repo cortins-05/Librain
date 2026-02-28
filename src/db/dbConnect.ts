@@ -1,47 +1,48 @@
+// src/db/dbConnect.ts
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
-
-if (!MONGODB_URI) {
-  throw new Error(
-    "Define la variable MONGODB_URI en tu archivo .env.local"
-  );
+function getMongoUri(): string {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error("Missing MONGODB_URI");
+  }
+  return uri;
 }
 
-/**
- * Cacheamos la conexión en el objeto global para que Next.js no
- * abra una conexión nueva en cada hot-reload (dev) ni en cada
- * invocación de una serverless function (prod).
- */
-declare global {
-  // eslint-disable-next-line no-var
-  var _mongooseCache: {
-    conn: typeof mongoose | null;
-    promise: Promise<typeof mongoose> | null;
-  };
-}
+const MONGODB_URI = getMongoUri();
 
-const cached = global._mongooseCache ?? { conn: null, promise: null };
-global._mongooseCache = cached;
+type Cached = {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+};
 
-export async function dbConnect(): Promise<typeof mongoose> {
-  // Si ya hay conexión establecida, la reutilizamos
+const globalForMongoose = globalThis as unknown as { mongoose: Cached };
+
+const cached =
+  globalForMongoose.mongoose ??
+  (globalForMongoose.mongoose = { conn: null, promise: null });
+
+export async function dbConnect() {
   if (cached.conn) return cached.conn;
 
-  // Si no hay promesa en curso, la creamos
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      bufferCommands: false, // lanza error inmediato si no hay conexión, sin hacer cola
-    });
+    cached.promise = mongoose
+      .connect(MONGODB_URI, {
+        // importante en serverless
+        serverSelectionTimeoutMS: 10_000,
+        socketTimeoutMS: 45_000,
+        maxPoolSize: 10,
+        bufferCommands: false,
+      })
+      .then((m) => m)
+      .catch((error) => {
+        cached.promise = null;
+        throw error;
+      });
   }
 
-  try {
-    cached.conn = await cached.promise;
-  } catch (err) {
-    // Si falla, reseteamos la promesa para que el próximo intento vuelva a conectar
-    cached.promise = null;
-    throw err;
-  }
-
+  cached.conn = await cached.promise;
   return cached.conn;
 }
+
+export default dbConnect;

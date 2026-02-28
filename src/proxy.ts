@@ -37,5 +37,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api/auth).*)"], // opcional; lo importante es el if de arriba
-}
+  matcher: ["/((?!api|_next|favicon.ico|robots.txt|sitemap.xml).*)"],
+};
