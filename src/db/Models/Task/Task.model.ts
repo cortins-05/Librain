@@ -12,6 +12,7 @@ export interface IStored {
   score: number;
   description: string;
   descriptionIA: string;
+  category: string;
 }
 
 export interface IStoredDocument extends IStored, Document {}
@@ -23,8 +24,9 @@ const StoredSchema = new Schema<IStoredDocument>({
   completedAt: { type: Date },
   state: { type: String, enum: STORED_STATES, default: "raw" },
   score: { type: Number, default: 0 },
-  description: { type: String, required: true },
+  description: { type: String, required: false },
   descriptionIA: { type: String, default: "" },
+  category: {type:String, required: false}
 });
 
 const StoredModel =

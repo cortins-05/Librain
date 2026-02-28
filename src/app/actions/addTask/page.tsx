@@ -18,15 +18,15 @@ export default function AddTaskPage() {
             <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
 
             <Badge variant="outline" className="mb-4 rounded-full px-3 py-1 text-xs tracking-wide">
-              Add Task
+              Nueva inquietud
             </Badge>
 
             <h1 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              Agrega una nueva tarea inteligente
+              Agrega una nueva inquietud inteligente
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Carga una URL, texto o archivo. Librain analizara el contenido y te devolvera
-              resumen IA, estado y score para priorizar mejor.
+              Carga una URL, texto o archivo. Librain analizará el contenido y te devolverá
+              resumen IA, estado y puntuación para priorizar mejor.
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -38,11 +38,11 @@ export default function AddTaskPage() {
               </Button>
               <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs">
                 <BrainCog className="size-3.5" />
-                Analisis IA
+                Análisis IA
               </Badge>
               <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs">
                 <Sparkles className="size-3.5" />
-                Priorizacion automatica
+                Priorización automática
               </Badge>
             </div>
           </div>

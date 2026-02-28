@@ -17,9 +17,10 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import Link from "next/link";
 import {
-  Home,
-  Info,
+  Citrus,
   ChevronRight,
+  Star,
+  CircleQuestionMark
 } from "lucide-react";
 
 function getInitials(name?: string | null, email?: string | null) {
@@ -32,14 +33,19 @@ function getInitials(name?: string | null, email?: string | null) {
 
 const navMain = [
   {
-    label: "Inicio",
-    href: "/",
-    icon: Home,
+    label: "Recomendación diaria",
+    href: "/daily",
+    icon: Star
   },
   {
-    label: "About Us",
+    label: "General",
+    href: "/",
+    icon: Citrus,
+  },
+  {
+    label: "Sobre nosotros",
     href: "/about",
-    icon: Info,
+    icon: CircleQuestionMark,
   },
 ];
 

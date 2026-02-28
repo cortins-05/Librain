@@ -1,12 +1,11 @@
 ﻿"use client";
 
-import { useState, type ComponentType } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import {
   CalendarDays,
   CheckCircle2,
@@ -20,38 +19,7 @@ import {
 } from "lucide-react";
 
 import { toggleCompletedAction } from "@/actions/tasks/toggleCompleted";
-import type { TaskListItem, TaskListState } from "./types";
-
-const stateUI: Record<
-  TaskListState,
-  {
-    label: string;
-    badgeClass: string;
-    icon: ComponentType<{ className?: string }>;
-  }
-> = {
-  raw: {
-    label: "raw",
-    badgeClass: "border-muted-foreground/20 bg-muted/40 text-muted-foreground",
-    icon: Circle,
-  },
-  usable: {
-    label: "usable",
-    badgeClass: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-400",
-    icon: Circle,
-  },
-  solid: {
-    label: "solid",
-    badgeClass: "border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-400",
-    icon: Circle,
-  },
-  actionable: {
-    label: "actionable",
-    badgeClass:
-      "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-    icon: CheckCircle2,
-  },
-};
+import type { TaskListItem } from "./types";
 
 function safeDateLabel(value: string) {
   const date = new Date(value);
@@ -77,15 +45,12 @@ export default function TaskView({
 
   const { id, name, description, descriptionIA, state, score, createdAt, completedAt } =
     task;
-  const displayName = name.trim() || "Tarea sin titulo";
+  const displayName = name.trim() || "inquietud sin título";
 
   const isCompleted = Boolean(completedAt) || state === "actionable";
   const createdLabel = safeDateLabel(createdAt);
   const completedLabel = completedAt ? safeDateLabel(completedAt) : null;
   const shortId = id.length > 12 ? `${id.slice(0, 4)}...${id.slice(-4)}` : id;
-
-  const ui = stateUI[state];
-  const StateIcon = ui.icon;
 
   async function deleteTask() {
     if (isDeleting) return;
@@ -99,14 +64,14 @@ export default function TaskView({
 
       if (!res.ok) {
         const msg = await res.text().catch(() => "");
-        throw new Error(msg || `Delete failed (${res.status})`);
+        throw new Error(msg || `Error al eliminar (${res.status})`);
       }
 
       onDeleted?.(id);
       router.refresh();
     } catch (e) {
       console.error(e);
-      alert("No se pudo borrar la tarea.");
+      alert("No se pudo borrar la inquietud.");
     } finally {
       setIsDeleting(false);
     }
@@ -118,7 +83,7 @@ export default function TaskView({
       router.refresh();
     } catch (e) {
       console.error(e);
-      alert("No se pudo actualizar el estado de la tarea.");
+      alert("No se pudo actualizar el estado de la inquietud.");
     }
   }
 
@@ -136,21 +101,10 @@ export default function TaskView({
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge
                 variant="outline"
-                className={cn(
-                  "rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide",
-                  ui.badgeClass
-                )}
-              >
-                <StateIcon className="size-3.5" />
-                {ui.label}
-              </Badge>
-
-              <Badge
-                variant="outline"
                 className="rounded-full border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary"
               >
                 <Star className="size-3.5" />
-                score {score}
+                puntuación {score}
               </Badge>
 
               <Badge
@@ -192,7 +146,7 @@ export default function TaskView({
           <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-background/40 p-3">
             <CalendarDays className="size-4 text-muted-foreground" />
             <div className="min-w-0">
-              <p className="text-[11px] font-medium text-muted-foreground">Created</p>
+              <p className="text-[11px] font-medium text-muted-foreground">Creada</p>
               <p className="truncate text-sm">{createdLabel}</p>
             </div>
           </div>
@@ -203,13 +157,13 @@ export default function TaskView({
             onClick={toggleCompleted}
           >
             <div className="flex w-full items-center gap-2 text-left">
-              {isCompleted ? (
+              {completedLabel ? (
                 <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
               ) : (
                 <Circle className="size-4 text-muted-foreground" />
               )}
               <div className="min-w-0">
-                <p className="text-[11px] font-medium text-muted-foreground">Completed</p>
+                <p className="text-[11px] font-medium text-muted-foreground">Completada</p>
                 <p className="truncate text-sm">{completedLabel ?? "Pendiente"}</p>
               </div>
             </div>
@@ -220,7 +174,7 @@ export default function TaskView({
       <CardFooter className="flex items-center justify-between border-t border-border/70 bg-muted/15 px-6 py-3">
         <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
           <Clock3 className="size-3.5" />
-          {isCompleted ? "Completada" : "Pendiente de accion"}
+          {isCompleted ? "Completada" : "Pendiente de acción"}
         </span>
         <Button
           variant="destructive"
@@ -228,8 +182,8 @@ export default function TaskView({
           onClick={deleteTask}
           disabled={isDeleting}
           className="transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100"
-          aria-label="Delete task"
-          title="Delete"
+          aria-label="Eliminar inquietud"
+          title="Eliminar"
         >
           {isDeleting ? (
             <Loader2 className="size-4 animate-spin" />
@@ -241,4 +195,3 @@ export default function TaskView({
     </Card>
   );
 }
-

@@ -8,13 +8,13 @@ export async function addPreferenceAction(name: string) {
   await dbConnect();
 
   if (name.length==0) {
-    throw new Error("Invalid name");
+    throw new Error("Nombre no válido");
   }
 
   const session = await auth.api.getSession({headers: await headers()});
 
   if(!session?.user){
-    throw new Error("Invalid user");
+    throw new Error("Usuario no válido");
   }
 
   const preferences = session.user.preferences;

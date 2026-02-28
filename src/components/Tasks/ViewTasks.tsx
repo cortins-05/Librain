@@ -19,15 +19,15 @@ export default function ViewTasks({ tasks }: { tasks: TaskListItem[] }) {
               <ClipboardList className="size-5" />
             </span>
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold sm:text-3xl">Aun no hay tareas</h2>
+              <h2 className="text-2xl font-semibold sm:text-3xl">Aún no hay inquietudes</h2>
               <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Empieza cargando una URL, un texto o un archivo. Librain te devolvera un resumen
-                IA, estado de madurez y score para priorizar.
+                Empieza cargando una URL, un texto o un archivo. Librain te devolverá un resumen
+                IA, estado de madurez y puntuación para priorizar.
               </p>
             </div>
             <Button asChild size="lg">
               <Link href="/actions/addTask">
-                Crear primera tarea
+                Crear primera inquietud
                 <ArrowRight />
               </Link>
             </Button>
@@ -41,9 +41,9 @@ export default function ViewTasks({ tasks }: { tasks: TaskListItem[] }) {
     <section className="space-y-4">
       <div className="animate-in fade-in-0 slide-in-from-bottom-4 flex flex-wrap items-center justify-between gap-3 duration-500">
         <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight">Tus tareas</h2>
-          <p className="text-sm text-muted-foreground">
-            Revisa, completa o limpia tu backlog sin perder contexto.
+          <h2 className="text-2xl font-semibold tracking-tight">Tus inquietudes</h2>
+          <p className="text-sm text-muted-foreground font-fira-sans">
+            Revisa, completa o limpia tu lista de pendientes sin perder contexto.
           </p>
         </div>
 

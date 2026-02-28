@@ -99,14 +99,14 @@ export function LoginForm({
             <FieldGroup className="gap-6">
               <div className="space-y-3 text-left">
                 <Badge variant="outline" className="rounded-full px-3 py-1 text-xs tracking-wide">
-                  Login
+                  Inicio de sesión
                 </Badge>
                 <div className="space-y-1.5">
                   <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
                     Bienvenido de vuelta
                   </h1>
-                  <p className="text-sm text-muted-foreground">
-                    Inicia sesion para continuar con tu panel de tareas inteligentes.
+                  <p className="text-sm text-muted-foreground font-fira-sans">
+                    Inicia sesión para continuar con tu panel de inquietudes inteligentes.
                   </p>
                 </div>
               </div>
@@ -149,7 +149,7 @@ export function LoginForm({
               </Button>
 
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card/85">
-                Or continue with
+                O continúa con
               </FieldSeparator>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -181,7 +181,7 @@ export function LoginForm({
               </div>
 
               <FieldDescription className="text-center text-sm">
-                No tienes cuenta? <Link href="/register">Registrate</Link>
+                ¿No tienes cuenta? <Link href="/register">Regístrate</Link>
               </FieldDescription>
             </FieldGroup>
           </form>
@@ -201,7 +201,7 @@ export function LoginForm({
                     Librain
                   </CardTitle>
                   <CardDescription>
-                    Organiza, analiza y prioriza tus tareas con ayuda de IA.
+                    Organiza, analiza y prioriza tus inquietudes con ayuda de IA.
                   </CardDescription>
                 </CardHeader>
               </Card>

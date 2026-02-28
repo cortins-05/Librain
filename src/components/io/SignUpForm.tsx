@@ -129,14 +129,14 @@ export function SignupForm({ className, ...props }: Props) {
             <FieldGroup className="gap-6">
               <div className="space-y-3 text-left">
                 <Badge variant="outline" className="rounded-full px-3 py-1 text-xs tracking-wide">
-                  Register
+                  Registro
                 </Badge>
                 <div className="space-y-1.5">
                   <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
                     Crea tu cuenta
                   </h1>
-                  <p className="text-sm text-muted-foreground">
-                    Empieza a organizar y priorizar tareas con Librain en minutos.
+                  <p className="text-sm text-muted-foreground font-fira-sans">
+                    Empieza a organizar y priorizar inquietudes con Librain en minutos.
                   </p>
                 </div>
               </div>
@@ -144,7 +144,7 @@ export function SignupForm({ className, ...props }: Props) {
               <Field>
                 <FieldLabel htmlFor="register-name" className="text-sm font-medium">
                   <UserRound className="size-3.5" />
-                  Name
+                  Nombre
                 </FieldLabel>
                 <Input
                   id="register-name"
@@ -160,7 +160,7 @@ export function SignupForm({ className, ...props }: Props) {
               <Field>
                 <FieldLabel htmlFor="register-email" className="text-sm font-medium">
                   <Mail className="size-3.5" />
-                  Email
+                  Correo electrónico
                 </FieldLabel>
                 <Input
                   id="register-email"
@@ -177,7 +177,7 @@ export function SignupForm({ className, ...props }: Props) {
                 <Field>
                   <FieldLabel htmlFor="register-password" className="text-sm font-medium">
                     <Lock className="size-3.5" />
-                    Password
+                    Contraseña
                   </FieldLabel>
                   <Input
                     id="register-password"
@@ -193,7 +193,7 @@ export function SignupForm({ className, ...props }: Props) {
                 <Field>
                   <FieldLabel htmlFor="register-confirm-password" className="text-sm font-medium">
                     <Lock className="size-3.5" />
-                    Confirm
+                    Confirmar
                   </FieldLabel>
                   <Input
                     id="register-confirm-password"
@@ -225,7 +225,7 @@ export function SignupForm({ className, ...props }: Props) {
               </Button>
 
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card/85">
-                Or continue with
+                O continúa con
               </FieldSeparator>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -257,7 +257,7 @@ export function SignupForm({ className, ...props }: Props) {
               </div>
 
               <FieldDescription className="text-center text-sm">
-                Ya tienes cuenta? <Link href="/login">Inicia sesion</Link>
+                ¿Ya tienes cuenta? <Link href="/login">Inicia sesión</Link>
               </FieldDescription>
             </FieldGroup>
           </form>
@@ -277,7 +277,7 @@ export function SignupForm({ className, ...props }: Props) {
                     Primeros pasos
                   </CardTitle>
                   <CardDescription>
-                    Registra tu cuenta y empieza a convertir notas sueltas en tareas accionables.
+                    Registra tu cuenta y empieza a convertir notas sueltas en inquietudes accionables.
                   </CardDescription>
                 </CardHeader>
               </Card>
