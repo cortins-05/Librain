@@ -250,7 +250,7 @@ export function SignupForm({ className, ...props }: Props) {
           <div className="bg-muted relative hidden md:block">
             <Image
               fill
-              src="/placeholder.svg"
+              src="/logo.jpeg"
               alt="Image"
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
             />

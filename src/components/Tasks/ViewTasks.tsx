@@ -1,11 +1,14 @@
-import { IStored } from "@/db/Models/Stored/main.model";
+"use client"
 
-export default function ViewTasks({tasks}:{tasks:IStored[]}) {
+import TaskView from "./TaskView";
+import type { TaskListItem } from "./types";
+
+export default function ViewTasks({ tasks }: { tasks: TaskListItem[] }) {
   return (
-    <main>
+    <main className="grid grid-cols-3 gap-3 mt-3 items-start">
       {
-        tasks.map(task=>(
-            <p key={task.name}>{JSON.stringify(task)}</p>
+        tasks.map((task) => (
+          <TaskView key={task.id} task={task} />
         ))
       }
     </main>
