@@ -7,7 +7,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Plus } from 'lucide-react';
+import { Plus, Trash } from 'lucide-react';
 import {
   BadgeCheck,
   CalendarDays,
@@ -20,7 +20,7 @@ import { useState } from "react";
 import { Input } from '@/components/ui/input';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { addPreferenceAction } from "@/actions/profile/addPreference";
+import { addPreferenceAction, deletePreferenceAction } from "@/actions/profile/managePreferences";
 import { useRouter } from "next/navigation";
 
 interface ProfileClientProps {
@@ -51,10 +51,16 @@ export default function ProfileClient({
   const avatarSrc = image && image.trim().length > 0 ? image : "/auth/default.png";
   const safeName = name.trim() || "Anonymous User";
   const router = useRouter();
-  const preferenceScore = Math.min(preferences.length * 10, 100);
 
   const [addition, setAddition] = useState(false);
   const [preferenceName, setPreferenceName] = useState<string|null>(null);
+
+  const [showDeletePreference, setShowDeletePreference] = useState<string|null>(null);
+
+  async function deletePreference(name:string){
+    await deletePreferenceAction(name);
+    router.refresh();
+  }
 
   async function addPreference(){
     if(!preferenceName||preferenceName==""){
@@ -147,7 +153,14 @@ export default function ProfileClient({
               <ul className="flex flex-col gap-3 list-disc ml-5">
                 {
                   preferences.map((preference,index)=>(
-                    <li key={index}>{preference}</li>
+                    <li key={index} className="flex justify-between" onMouseLeave={()=>setShowDeletePreference(null)} onMouseEnter={()=>{setShowDeletePreference(preference)}}>
+                      {preference}
+                      {
+                        showDeletePreference
+                        &&
+                        <button onClick={()=>{deletePreference(preference)}}> <Trash /> </button>
+                      }
+                    </li>
                   ))
                 }
               </ul>

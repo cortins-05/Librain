@@ -33,3 +33,18 @@ export async function addPreferenceAction(name: string) {
   }
     
 }
+
+export async function deletePreferenceAction(name:string) {
+  await dbConnect();
+  const session = await auth.api.getSession({headers:await headers()});
+  if(!session) return;
+  const preferences = session.user.preferences;
+  const prefePulidas = preferences.filter(pre=>pre!=name);
+  const {status} = await auth.api.updateUser({
+    headers: await headers(),
+    body: {
+      preferences: prefePulidas
+    }
+  })
+  return status;
+}

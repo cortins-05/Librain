@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Github, Lock, Mail, Sparkles } from "lucide-react";
+import { Github, Mail, Sparkles } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -128,18 +128,6 @@ export function LoginForm({
               </Field>
 
               <Field>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="login-password" className="text-sm font-medium">
-                    <Lock className="size-3.5" />
-                    Password
-                  </FieldLabel>
-                  <Link
-                    href="/forgot-password"
-                    className="ml-auto text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
                 <Input
                   id="login-password"
                   type="password"
