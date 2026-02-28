@@ -1,12 +1,11 @@
+export const dynamic = "force-dynamic";
+
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { client, db } from "@/db/db";
+import { db } from "@/db/db";
 
 export const auth = betterAuth({
-  database: mongodbAdapter(db, {
-    // si no pasas client, no hay transacciones
-    client,
-  }),
+  database: mongodbAdapter(db),
 
   user: {
     additionalFields: {
@@ -28,7 +27,7 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-    }
+    },
   },
 
   // opcional: joins (desde 1.4.0)
