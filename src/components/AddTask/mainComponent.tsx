@@ -1,9 +1,26 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import { toast } from "sonner";
+import {
+  FileText,
+  Globe,
+  ImageIcon,
+  Sparkles,
+  Type,
+  Upload,
+} from "lucide-react";
+
+import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
 import { Input } from "../ui/input";
 import { Spinner } from "../ui/spinner";
 import {
@@ -18,6 +35,35 @@ import { Textarea } from "@/components/ui/textarea";
 
 type ResourceType = "url" | "file" | "text";
 
+const RESOURCE_META: Record<
+  ResourceType,
+  {
+    label: string;
+    hint: string;
+    icon: ComponentType<{ className?: string }>;
+    placeholder: string;
+  }
+> = {
+  url: {
+    label: "URL",
+    hint: "Perfecto para articulos, noticias o referencias web.",
+    icon: Globe,
+    placeholder: "https://...",
+  },
+  file: {
+    label: "File",
+    hint: "Soporta PDF e imagenes (png, jpg, jpeg, webp, gif, bmp).",
+    icon: Upload,
+    placeholder: "",
+  },
+  text: {
+    label: "Text",
+    hint: "Pega apuntes, ideas o contenido libre para analizar.",
+    icon: Type,
+    placeholder: "Pega aqui tu texto...",
+  },
+};
+
 export default function MainComponentAddTask() {
   const router = useRouter();
 
@@ -29,6 +75,7 @@ export default function MainComponentAddTask() {
 
   const hasInputValue = resource === "file" ? Boolean(fileValue) : value.trim().length > 0;
   const canSubmit = Boolean(resource && hasInputValue && description.trim().length > 0);
+  const selectedResource = resource ? RESOURCE_META[resource] : null;
 
   async function saveTask() {
     const trimmedDescription = description.trim();
@@ -67,7 +114,11 @@ export default function MainComponentAddTask() {
             });
 
       const payload = (await response.json().catch(() => null)) as
-        | { error?: string; stored?: { _id?: string }; ai?: { fallback?: boolean; error?: string | null } }
+        | {
+            error?: string;
+            stored?: { _id?: string };
+            ai?: { fallback?: boolean; error?: string | null };
+          }
         | null;
 
       if (!response.ok) {
@@ -76,8 +127,6 @@ export default function MainComponentAddTask() {
         toast(errorMessage);
         return;
       }
-
-      console.log("Guardado con id:", payload?.stored?._id);
 
       if (payload?.ai?.fallback) {
         toast(
@@ -98,86 +147,169 @@ export default function MainComponentAddTask() {
   }
 
   return (
-    <>
-      <span className="mt-3 flex items-center gap-3">
-        <span>
-          <span className="text-xl font-bold">1.</span> First, select a resource:
-        </span>
-        <Select
-          onValueChange={(selected) => {
-            setResource(selected as ResourceType);
-            setValue("");
-            setFileValue(null);
-            setDescription("");
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Resource" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="url">URL</SelectItem>
-              <SelectItem value="file">File</SelectItem>
-              <SelectItem value="text">Text</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </span>
+    <div className="space-y-4">
+      <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 shadow-sm duration-500">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+              1
+            </span>
+            Selecciona el tipo de recurso
+          </CardTitle>
+          <CardDescription>
+            Elige como quieres crear la tarea: URL, archivo o texto libre.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Select
+            onValueChange={(selected) => {
+              setResource(selected as ResourceType);
+              setValue("");
+              setFileValue(null);
+              setDescription("");
+            }}
+          >
+            <SelectTrigger className="w-full sm:w-65">
+              <SelectValue placeholder="Selecciona un recurso" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="url">URL</SelectItem>
+                <SelectItem value="file">File</SelectItem>
+                <SelectItem value="text">Text</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
 
-      {resource && (
-        <div className="mt-4 flex flex-col gap-2.5">
-          <span className="flex items-end gap-3">
-            <span className="text-xl font-bold">2.</span>Then, set your resource:
-          </span>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant="secondary" className="rounded-full px-3 py-1">
+              <Globe className="size-3.5" />
+              URL
+            </Badge>
+            <Badge variant="secondary" className="rounded-full px-3 py-1">
+              <FileText className="size-3.5" />
+              PDF
+            </Badge>
+            <Badge variant="secondary" className="rounded-full px-3 py-1">
+              <ImageIcon className="size-3.5" />
+              Imagen
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
 
-          {resource === "url" && (
-            <Input
-              placeholder="Url..."
-              onChange={(event) => setValue(event.target.value)}
-              value={value}
-              type="text"
-            />
-          )}
-
-          {resource === "text" && (
-            <Textarea onChange={(event) => setValue(event.target.value)} value={value} />
-          )}
-
-          {resource === "file" && (
-            <div className="flex flex-col gap-2">
+      {resource && selectedResource ? (
+        <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 shadow-sm duration-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                2
+              </span>
+              Configura el contenido
+            </CardTitle>
+            <CardDescription className="flex items-center gap-2">
+              <selectedResource.icon className="size-4" />
+              {selectedResource.hint}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {resource === "url" ? (
               <Input
-                type="file"
-                accept="application/pdf,image/*"
-                onChange={(event) => {
-                  const selectedFile = event.target.files?.[0] ?? null;
-                  setFileValue(selectedFile);
-                  setValue(selectedFile?.name ?? "");
-                }}
+                placeholder={selectedResource.placeholder}
+                onChange={(event) => setValue(event.target.value)}
+                value={value}
+                type="text"
               />
-              {fileValue && (
-                <p className="text-sm text-muted-foreground">
-                  Archivo seleccionado: {fileValue.name}
-                </p>
-              )}
+            ) : null}
+
+            {resource === "text" ? (
+              <Textarea
+                onChange={(event) => setValue(event.target.value)}
+                value={value}
+                placeholder={selectedResource.placeholder}
+                className="min-h-36"
+              />
+            ) : null}
+
+            {resource === "file" ? (
+              <div className="space-y-3">
+                <Input
+                  type="file"
+                  accept="application/pdf,image/*"
+                  onChange={(event) => {
+                    const selectedFile = event.target.files?.[0] ?? null;
+                    setFileValue(selectedFile);
+                    setValue(selectedFile?.name ?? "");
+                  }}
+                />
+                {fileValue ? (
+                  <div className="rounded-xl border border-border/70 bg-muted/20 p-3 text-sm">
+                    Archivo seleccionado:{" "}
+                    <span className="font-medium text-foreground">{fileValue.name}</span>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {hasInputValue ? (
+        <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 shadow-sm duration-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                3
+              </span>
+              Escribe una descripcion corta
+            </CardTitle>
+            <CardDescription>
+              Esta descripcion ayuda a la IA a entender el contexto de lo que quieres
+              priorizar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              onChange={(event) => setDescription(event.target.value)}
+              value={description}
+              className="min-h-32"
+              placeholder="Ejemplo: Quiero extraer los puntos clave y definir la accion siguiente."
+            />
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {resource ? (
+        <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 shadow-sm duration-500">
+          <CardContent className="flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">Listo para guardar</p>
+              <p className="text-sm text-muted-foreground">
+                Completa los pasos y guarda para generar metadata con IA.
+              </p>
             </div>
-          )}
-        </div>
-      )}
 
-      {hasInputValue && (
-        <div className="mt-3 flex flex-col gap-3">
-          <span className="flex items-end gap-3">
-            <span className="text-xl font-bold">3.</span>Finally, add a short description:
-          </span>
-          <Textarea onChange={(event) => setDescription(event.target.value)} value={description} />
-        </div>
-      )}
-
-      {canSubmit && (
-        <Button onClick={saveTask} className="ml-auto w-fit" size="lg" disabled={loading}>
-          {loading ? <Spinner className="h-full w-auto" /> : "Guardar"}
-        </Button>
-      )}
-    </>
+            <Button
+              onClick={saveTask}
+              className="w-full sm:w-auto"
+              size="lg"
+              disabled={loading || !canSubmit}
+            >
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <Spinner />
+                  Guardando...
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2">
+                  <Sparkles className="size-4" />
+                  Guardar tarea
+                </span>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
   );
 }

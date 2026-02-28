@@ -1,10 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Github, Lock, Mail, Sparkles, UserRound } from "lucide-react";
+
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { Github } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Field,
   FieldDescription,
@@ -13,10 +19,6 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
 
 type Props = React.ComponentProps<"div">;
 
@@ -27,7 +29,6 @@ export function SignupForm({ className, ...props }: Props) {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -41,18 +42,17 @@ export function SignupForm({ className, ...props }: Props) {
     setErrorMsg(null);
 
     if (passwordMismatch) {
-      setErrorMsg("Passwords do not match.");
+      setErrorMsg("Las contrasenas no coinciden.");
       return;
     }
 
     if (password.length < 8) {
-      setErrorMsg("Password must be at least 8 characters long.");
+      setErrorMsg("La contrasena debe tener al menos 8 caracteres.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Better Auth: register / sign-up con email & password
       const { error } = await authClient.signUp.email(
         {
           email,
@@ -70,10 +70,10 @@ export function SignupForm({ className, ...props }: Props) {
         }
       );
 
-      // por si acaso (algunos setups devuelven error aquí también)
-      if (error) setErrorMsg(error.message!);
+      if (error) setErrorMsg(error.message ?? "No se pudo crear la cuenta.");
     } catch (err) {
-      console.error(err)
+      console.error(err);
+      setErrorMsg("No se pudo crear la cuenta.");
     } finally {
       setIsSubmitting(false);
     }
@@ -92,9 +92,9 @@ export function SignupForm({ className, ...props }: Props) {
           onError: (ctx) => setErrorMsg(ctx.error.message),
         }
       );
-      // Nota: en social normalmente redirige el navegador, no llega aquí
     } catch (err) {
-      console.error(err)
+      console.error(err);
+      setErrorMsg("No se pudo registrar con GitHub.");
     } finally {
       setIsSubmitting(false);
     }
@@ -114,45 +114,56 @@ export function SignupForm({ className, ...props }: Props) {
         }
       );
     } catch (err) {
-      console.error(err)
+      console.error(err);
+      setErrorMsg("No se pudo registrar con Google.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="overflow-hidden p-0">
-        <CardContent className="grid p-0 md:grid-cols-2">
+    <div className={cn("animate-in fade-in-0 slide-in-from-bottom-4 duration-500", className)} {...props}>
+      <Card className="overflow-hidden border-border/80 bg-card/85 shadow-sm backdrop-blur">
+        <CardContent className="grid p-0 md:grid-cols-[1.2fr_0.8fr]">
           <form className="p-6 md:p-8" onSubmit={onSubmit}>
-            <FieldGroup>
-              <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Create your account</h1>
-                <p className="text-muted-foreground text-sm text-balance">
-                  Enter your email below to create your account
-                </p>
+            <FieldGroup className="gap-6">
+              <div className="space-y-3 text-left">
+                <Badge variant="outline" className="rounded-full px-3 py-1 text-xs tracking-wide">
+                  Register
+                </Badge>
+                <div className="space-y-1.5">
+                  <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+                    Crea tu cuenta
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Empieza a organizar y priorizar tareas con Librain en minutos.
+                  </p>
+                </div>
               </div>
-              
+
               <Field>
-                <FieldLabel htmlFor="name">Name</FieldLabel>
+                <FieldLabel htmlFor="register-name" className="text-sm font-medium">
+                  <UserRound className="size-3.5" />
+                  Name
+                </FieldLabel>
                 <Input
-                  id="name"
-                  type="name"
-                  placeholder="Nick"
+                  id="register-name"
+                  type="text"
+                  placeholder="Tu nombre"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
                 />
-                <FieldDescription>
-                  We&apos;ll use this to contact you. We will not share your name with anyone else.
-                </FieldDescription>
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <FieldLabel htmlFor="register-email" className="text-sm font-medium">
+                  <Mail className="size-3.5" />
+                  Email
+                </FieldLabel>
                 <Input
-                  id="email"
+                  id="register-email"
                   type="email"
                   placeholder="m@example.com"
                   required
@@ -160,100 +171,117 @@ export function SignupForm({ className, ...props }: Props) {
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
                 />
-                <FieldDescription>
-                  We&apos;ll use this to contact you. We will not share your email with anyone else.
-                </FieldDescription>
               </Field>
 
-              <Field>
-                <Field className="grid grid-cols-2 gap-4">
-                  <Field>
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      autoComplete="new-password"
-                      minLength={8}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      autoComplete="new-password"
-                      minLength={8}
-                    />
-                  </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="register-password" className="text-sm font-medium">
+                    <Lock className="size-3.5" />
+                    Password
+                  </FieldLabel>
+                  <Input
+                    id="register-password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="new-password"
+                    minLength={8}
+                  />
                 </Field>
 
-                <FieldDescription>
-                  Must be at least 8 characters long.
-                  {passwordMismatch ? (
-                    <span className="ml-2 text-destructive">Passwords do not match.</span>
-                  ) : null}
-                </FieldDescription>
-              </Field>
+                <Field>
+                  <FieldLabel htmlFor="register-confirm-password" className="text-sm font-medium">
+                    <Lock className="size-3.5" />
+                    Confirm
+                  </FieldLabel>
+                  <Input
+                    id="register-confirm-password"
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
+                    minLength={8}
+                  />
+                </Field>
+              </div>
+
+              <FieldDescription>
+                Minimo 8 caracteres.
+                {passwordMismatch ? (
+                  <span className="ml-2 text-destructive">Las contrasenas no coinciden.</span>
+                ) : null}
+              </FieldDescription>
 
               {errorMsg ? (
-                <Field>
-                  <p className="text-sm text-destructive">{errorMsg}</p>
-                </Field>
+                <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {errorMsg}
+                </div>
               ) : null}
 
-              <Field>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Creating..." : "Create Account"}
-                </Button>
-              </Field>
+              <Button type="submit" disabled={isSubmitting} size="lg" className="w-full">
+                {isSubmitting ? "Creando cuenta..." : "Crear cuenta"}
+              </Button>
 
-              <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
+              <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card/85">
                 Or continue with
               </FieldSeparator>
 
-              <Field className="grid grid-cols-2 gap-4">
-                {/* Google */}
-                <Button type="button" onClick={signUpWithGoogle} disabled={isSubmitting}>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={signUpWithGoogle}
+                  disabled={isSubmitting}
+                  className="justify-center gap-2"
+                >
+                  <svg className="size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path
                       d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
                       fill="currentColor"
                     />
                   </svg>
-                  <span className="sr-only">Sign up with Google</span>
+                  Google
                 </Button>
-
-                {/* GitHub */}
-                <Button type="button" onClick={signUpWithGithub} disabled={isSubmitting}>
-                  <Github size={20} />
-                  <span className="sr-only">Sign up with GitHub</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={signUpWithGithub}
+                  disabled={isSubmitting}
+                  className="justify-center gap-2"
+                >
+                  <Github className="size-4" />
+                  GitHub
                 </Button>
-              </Field>
+              </div>
 
-              {/* Facebook (si lo quieres visible, cámbialo a un botón real) */}
-              {/* <Button type="button" onClick={signUpWithFacebook} disabled={isSubmitting}>
-                Facebook
-              </Button> */}
-
-              <FieldDescription className="text-center">
-                Already have an account? <Link href="/login">Sign in</Link>
+              <FieldDescription className="text-center text-sm">
+                Ya tienes cuenta? <Link href="/login">Inicia sesion</Link>
               </FieldDescription>
             </FieldGroup>
           </form>
 
-          <div className="bg-muted relative hidden md:block">
+          <div className="relative hidden border-l border-border/70 bg-muted/30 md:block">
             <Image
               fill
-              src="/logo.jpeg"
-              alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              src="/imagen_corporativa.png"
+              alt="Librain"
+              className="absolute inset-0 h-full w-full object-cover opacity-95 dark:brightness-[0.75] rounded-2xl"
             />
+            <div className="absolute inset-x-0 bottom-0 p-6">
+              <Card className="border-border/70 bg-background/80 backdrop-blur">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Sparkles className="size-4 text-primary" />
+                    Primeros pasos
+                  </CardTitle>
+                  <CardDescription>
+                    Registra tu cuenta y empieza a convertir notas sueltas en tareas accionables.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
           </div>
         </CardContent>
       </Card>

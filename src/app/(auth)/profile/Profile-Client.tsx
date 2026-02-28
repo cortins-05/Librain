@@ -2,11 +2,26 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { BadgeCheck, CalendarClock, Mail, Sparkles, User, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import {
+  BadgeCheck,
+  CalendarDays,
+  Mail,
+  Sparkles,
+  UserRound,
+  WandSparkles,
+} from "lucide-react";
+import { useState } from "react";
+import { Input } from '@/components/ui/input';
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { addPreferenceAction } from "@/actions/profile/addPreference";
+import { useRouter } from "next/navigation";
 
 interface ProfileClientProps {
   name: string;
@@ -33,42 +48,55 @@ export default function ProfileClient({
   preferences,
   joinedDate,
 }: ProfileClientProps) {
-  // If image is empty or explicitly the default path, point to /auth/default.png
-  // AvatarFallback handles broken src automatically
-  const avatarSrc =
-    image && image.trim().length > 0 ? image : "/auth/default.png";
+  const avatarSrc = image && image.trim().length > 0 ? image : "/auth/default.png";
+  const safeName = name.trim() || "Anonymous User";
+  const router = useRouter();
+  const preferenceScore = Math.min(preferences.length * 10, 100);
+
+  const [addition, setAddition] = useState(false);
+  const [preferenceName, setPreferenceName] = useState<string|null>(null);
+
+  async function addPreference(){
+    if(!preferenceName||preferenceName==""){
+      toast("Error al introducir la preferencia, revisa el campo.")
+      return;
+    }
+    await addPreferenceAction(preferenceName);
+    router.refresh();
+  }
 
   return (
-    <main className="h-full relative overflow-hidden rounded-3xl border border-border flex items-center justify-center">
-      {/* Subtle ambient glows using theme primary */}
-      <div className="pointer-events-none absolute -top-32 -left-24 h-80 w-80 rounded-full" />
-      <div className="pointer-events-none absolute -right-24 -bottom-16 h-72 w-72 rounded-full" />
+    <section className="relative isolate h-full overflow-y-auto px-4 py-8 md:px-10 md:py-10">
+      <div className="pointer-events-none absolute -top-20 right-8 h-72 w-72 rounded-full bg-primary/12 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-12 left-0 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
 
-      <div className="relative z-10 grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+      <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.6fr_1fr]">
+        <Card className="animate-in fade-in-0 slide-in-from-bottom-4 overflow-hidden border-border/80 bg-linear-to-br from-background via-background to-muted/70 shadow-sm duration-500">
+          <CardContent className="relative p-6 md:p-8">
+            <div className="absolute -right-14 -top-14 h-44 w-44 rounded-full border border-primary/25" />
+            <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
 
-        {/* ── Main profile card ──────────────────────────── */}
-        <Card className="border-border bg-card-foreground/30 shadow-md">
-          <CardContent className="p-6 md:p-8">
+            <Badge variant="outline" className="mb-4 rounded-full px-3 py-1 text-xs tracking-wide">
+              Profile
+            </Badge>
 
-            {/* Avatar + name */}
-            <div className="mb-6 flex flex-wrap items-center gap-5">
-              <div className="relative">
-                <span className="absolute rounded-full" />
-                <Avatar className="relative h-20 w-20 border-2 border-background">
-                  <AvatarImage src={avatarSrc} alt={`Avatar de ${name}`} />
-                  <AvatarFallback className="bg-muted text-foreground text-xl font-semibold">
-                    {getInitials(name, email)}
+            <div className="relative flex flex-wrap items-center gap-5">
+              <div className="rounded-3xl border border-primary/20 bg-primary/10 p-1.5">
+                <Avatar className="h-20 w-20 border-2 border-background shadow-sm">
+                  <AvatarImage src={avatarSrc} alt={`Avatar de ${safeName}`} />
+                  <AvatarFallback className="bg-muted text-lg font-semibold text-foreground">
+                    {getInitials(safeName, email)}
                   </AvatarFallback>
                 </Avatar>
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="space-y-2">
                 <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-                  {name}
+                  {safeName}
                 </h1>
                 <Badge
                   variant="secondary"
-                  className="w-fit gap-1.5 rounded-full px-3 py-0.5 text-xs"
+                  className="w-fit gap-1.5 rounded-full px-3 py-1 text-xs"
                 >
                   <BadgeCheck className="size-3 text-primary" />
                   Perfil activo
@@ -76,86 +104,87 @@ export default function ProfileClient({
               </div>
             </div>
 
-            <Separator className="mb-6" />
+            <Separator className="my-6" />
 
-            {/* Info tiles */}
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-border bg-muted/40 p-4 transition-colors hover:bg-muted/70">
-                <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+                <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   <Mail className="size-3.5" />
                   Email
                 </p>
-                <p className="truncate text-sm font-semibold text-foreground">
-                  {email}
-                </p>
+                <p className="truncate text-sm font-semibold text-foreground">{email}</p>
               </div>
 
-              <div className="rounded-xl border border-border bg-muted/40 p-4 transition-colors hover:bg-muted/70">
-                <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                  <CalendarClock className="size-3.5" />
-                  Se unió
+              <div className="rounded-xl border border-border/70 bg-background/45 p-4">
+                <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <CalendarDays className="size-3.5" />
+                  Se unio
                 </p>
-                <p className="text-sm font-semibold text-foreground">
-                  {joinedDate}
-                </p>
+                <p className="truncate text-sm font-semibold text-foreground">{joinedDate}</p>
               </div>
+            </div>
+
+            <div className="mt-10 rounded-xl border border-border/70 bg-background/45 p-4 flex flex-col">
+              <p className="flex gap-3"><Sparkles />Preferences <button className="ml-auto transition-all hover:rotate-45" onClick={()=>{setAddition(true)}}> <Plus/> </button></p>
+              {
+                addition
+                &&
+                <>
+                  <Separator className="my-5" />
+                  <span className="flex gap-3">
+                    <Input type="text" placeholder="Preference Name..." onChange={(e)=>{setPreferenceName(e.target.value)}} />
+                    {
+                      preferenceName
+                      &&
+                      <Button variant={"outline"} onClick={addPreference}>
+                        <Plus/>
+                      </Button>
+                    }
+                  </span>
+                </>
+              }
+              <Separator className="my-5" />
+              <ul className="flex flex-col gap-3 list-disc ml-5">
+                {
+                  preferences.map((preference,index)=>(
+                    <li key={index}>{preference}</li>
+                  ))
+                }
+              </ul>
             </div>
           </CardContent>
         </Card>
 
-        {/* ── Sidebar ────────────────────────────────────── */}
-        <aside className="flex flex-col gap-6">
-
-          {/* Preferences */}
-          <Card className="border-border bg-card-foreground/60 text-card-foreground shadow-md relative">
-            <CardHeader className="px-6 pb-3 pt-5">
-              <CardTitle className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest">
-                <Sparkles className="size-3.5" />
-                Preferencias
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-              {preferences.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {preferences.map((pref) => (
-                    <Badge
-                      key={pref}
-                      variant="outline"
-                      className="cursor-default rounded-full px-3 py-1 text-xs font-medium transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
-                    >
-                      {pref}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm italic">
-                  Aún no has configurado preferencias.
-                </p>
-              )}
-            </CardContent>
-            <Button className="absolute top-7 right-3" variant={"ghost"} size={"sm"}>
-              <Plus/>
-            </Button>
-            <CardFooter className="w-full">
-              <div className="space-y-2 w-full">
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-xs">
-                    Preferencias guardadas
-                  </span>
-                  <span className="text-xs font-semibold">
-                    {preferences.length}
-                  </span>
-                </div>
-                <Progress
-                  value={Math.min(preferences.length * 10, 100)}
-                  className="h-1.5"
-                />
+        <aside className="space-y-4">
+          <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 shadow-sm duration-500 [animation-delay:160ms]">
+            <CardContent className="flex items-start gap-3 py-6">
+              <div className="rounded-lg border border-primary/20 bg-primary/10 p-2 text-primary">
+                <WandSparkles className="size-4" />
               </div>
-            </CardFooter>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold">Personalizacion activa</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Cuantas mas preferencias tengas, mejor se ajusta el score de prioridades.
+                </p>
+              </div>
+            </CardContent>
           </Card>
 
+          <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 shadow-sm duration-500 [animation-delay:220ms]">
+            <CardContent className="flex items-start gap-3 py-6">
+              <div className="rounded-lg border border-primary/20 bg-primary/10 p-2 text-primary">
+                <UserRound className="size-4" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-semibold">Cuenta lista para trabajar</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Tu perfil esta activo y preparado para guardar y priorizar nuevas tareas.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </aside>
       </div>
-    </main>
+    </section>
   );
 }

@@ -46,7 +46,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SidebarProvider defaultOpen={isLoggedIn} className="w-screen flex">
+          <SidebarProvider defaultOpen={isLoggedIn} className="w-full flex">
             {isLoggedIn && <AppSidebar />}
             <main className="flex-1 flex gap-5">
               {isLoggedIn && <SidebarTrigger />}
