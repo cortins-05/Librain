@@ -27,16 +27,16 @@ async function reevaluateUserTasks(userId: string, preferences: string[]) {
   const reevaluationPromises = tasks.map(async (task) => {
     try {
       // Generar nueva metadata usando descripción existente
-      const { score, descriptionIA } = await generateStoredMetadata(
+      const { score } = await generateStoredMetadata(
         task.description || task.descriptionIA,
         preferences,
         task.description
       );
 
-      // Actualizar score y descripción IA
+      // Actualizar solo el score
       await StoredModel.updateOne(
         { _id: task._id },
-        { $set: { score, descriptionIA } }
+        { $set: { score } }
       );
     } catch (error) {
       console.error(`Error reevaluando tarea ${task._id}:`, error);
