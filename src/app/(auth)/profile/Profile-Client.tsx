@@ -22,6 +22,17 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { addPreferenceAction, deletePreferenceAction } from "@/actions/profile/managePreferences";
 import { useRouter } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ProfileClientProps {
   name: string;
@@ -56,9 +67,11 @@ export default function ProfileClient({
   const [preferenceName, setPreferenceName] = useState<string|null>(null);
 
   const [showDeletePreference, setShowDeletePreference] = useState<string|null>(null);
+  const [preferenceToDelete, setPreferenceToDelete] = useState<string|null>(null);
 
   async function deletePreference(name:string){
     await deletePreferenceAction(name);
+    setPreferenceToDelete(null);
     router.refresh();
   }
 
@@ -167,7 +180,27 @@ export default function ProfileClient({
                       {
                         showDeletePreference
                         &&
-                        <button onClick={()=>{deletePreference(preference)}}> <Trash /> </button>
+                        <AlertDialog>
+                          <AlertDialogTrigger className="blur-out" asChild>
+                            <button onClick={()=>setPreferenceToDelete(preference)}> <Trash /> </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Eliminar preferencia?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                ¿Estás seguro de que quieres eliminar la preferencia &quot;{preference}&quot;?
+                                <br /><br />
+                                Esto recalculará el score y descripción de todas tus tareas pendientes.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={()=>setPreferenceToDelete(null)}>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={()=>deletePreference(preference)} variant="destructive">
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       }
                     </li>
                   ))
