@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import type { TaskListItem, TaskListState } from "./types";
+import { toggleCompletedAction } from "@/actions/tasks/toggleCompleted";
 
 const stateUI: Record<
   TaskListState,
@@ -106,6 +107,11 @@ export default function TaskView({
     }
   }
 
+  async function toggleCompleted(){
+    await toggleCompletedAction(id);
+    router.refresh();
+  }
+
   return (
     <Card className="group relative overflow-hidden border border-border/60 bg-background/60 shadow-sm backdrop-blur transition hover:shadow-md">
       <div className="h-1 w-full bg-linear-to-r from-transparent via-primary/30 to-transparent" />
@@ -176,17 +182,19 @@ export default function TaskView({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/40 p-3">
-            {isCompleted ? (
-              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <Circle className="h-4 w-4 text-muted-foreground" />
-            )}
-            <div className="min-w-0">
-              <p className="text-[11px] font-medium text-muted-foreground">Completed</p>
-              <p className="truncate text-sm">{completedLabel ?? "—"}</p>
+          <Button variant={"ghost"} className="h-full w-full p-0 flex" onClick={toggleCompleted}>
+            <div className="flex-1 h-full p-3 flex items-center gap-2 rounded-xl border border-border/60 bg-background/40">
+              {isCompleted ? (
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Circle className="h-4 w-4 text-muted-foreground" />
+              )}
+              <div className="min-w-0">
+                <p className="text-[11px] font-medium text-muted-foreground">Completed</p>
+                <p className="truncate text-sm">{completedLabel ?? "—"}</p>
+              </div>
             </div>
-          </div>
+          </Button>
         </div>
       </CardContent>
 
