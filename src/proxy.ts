@@ -4,24 +4,26 @@ import { auth } from "@/lib/auth";
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 🔹 Permitir rutas públicas
-  if (
+  const isPublicRoute =
     pathname === "/login" ||
+    pathname === "/register" ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/_next") ||
-    pathname === "/favicon.ico"
-  ) {
+    pathname === "/favicon.ico";
+
+  // Public routes should bypass auth checks.
+  if (isPublicRoute) {
     return NextResponse.next();
   }
 
-  // 🔹 Obtener sesión
+  // Get session for protected routes.
   const session = await auth.api.getSession({
     headers: request.headers,
   });
 
-  // 🔹 Si no hay sesión → redirigir a /login
+  // If there is no session, redirect to /login.
   if (!session) {
-    const loginUrl = new URL("/login");
+    const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
 
