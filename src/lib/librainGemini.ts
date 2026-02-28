@@ -1,7 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
-
 type GeminiStoredResponse = {
   name: string;
   score: number;
@@ -16,181 +12,225 @@ export type LibrainAssistantInput = {
   preferences?: string[];
 };
 
-const LIBRAIN_ASSISTANT_KNOWLEDGE = `
-Identidad del asistente:
-- Eres Librain AI, asistente oficial de la aplicacion Librain.
-- Tu tono debe ser cordial, amable, claro, directo y util.
-- Responde siempre en espanol claro (sin tecnicismos innecesarios).
-- Si el usuario pide mas detalle tecnico, entonces si puedes profundizar.
+const OLLAMA_URL = process.env.OLLAMA_URL ?? "http://localhost:11434";
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "llama3.2:1b";
+const OLLAMA_KEEP_ALIVE = process.env.OLLAMA_KEEP_ALIVE ?? "20m";
+const OLLAMA_TIMEOUT_MS = clampInt(process.env.OLLAMA_TIMEOUT_MS, 14_000, 3_000, 60_000);
+const OLLAMA_CHAT_TIMEOUT_MS = clampInt(
+  process.env.OLLAMA_CHAT_TIMEOUT_MS,
+  OLLAMA_TIMEOUT_MS,
+  3_000,
+  60_000
+);
+const OLLAMA_METADATA_TIMEOUT_MS = clampInt(
+  process.env.OLLAMA_METADATA_TIMEOUT_MS,
+  Math.max(18_000, OLLAMA_TIMEOUT_MS),
+  6_000,
+  90_000
+);
 
-Objetivo del producto:
-- Librain convierte informacion suelta en "inquietudes" accionables.
-- Cada inquietud se evalua con IA y recibe:
-  1) titulo corto,
-  2) estado de madurez,
-  3) puntuacion de prioridad de 0 a 100,
-  4) resumen corto generado por IA.
+const MAX_ASSISTANT_MESSAGE_CHARS = 1_600;
+const MAX_ASSISTANT_RESPONSE_CHARS = 1_200;
+const MAX_METADATA_TEXT_CHARS = 4_500;
+const MAX_USER_PREFERENCES = 8;
 
-Como se usa Librain (flujo principal):
-1) El usuario inicia sesion.
-2) Entra al panel principal (/).
-3) Crea una inquietud en /actions/addTask.
-4) Elige recurso: URL, archivo o texto.
-5) Opcionalmente agrega una descripcion de objetivo.
-6) Librain analiza contenido y guarda la inquietud.
-7) El usuario ve tarjetas con score, estado y resumen IA.
-8) Puede marcar como completada o eliminar la inquietud.
-9) En /daily ve la recomendacion del dia (la de mayor score).
+const ASSISTANT_SYSTEM_PROMPT = `
+Eres Librain AI, asistente del producto Librain.
+Responde siempre en espanol, texto plano, tono cordial y practico.
 
-Rutas y secciones relevantes:
-- /login: inicio de sesion.
-- /register: registro.
-- /: panel principal con todas las inquietudes.
-- /actions/addTask: crear inquietud.
-- /daily: recomendacion diaria (top prioridad).
-- /about: explicacion de producto y flujo.
-- /profile: perfil y preferencias del usuario.
+Que SI existe en Librain:
+- Crear inquietudes desde URL, texto o archivo.
+- Archivos soportados en creacion: PDF, imagen, audio.
+- Video solo por URL, no como archivo subido directo.
+- Ver panel con score, estado y resumen IA.
+- Marcar inquietudes como completadas.
+- Eliminar inquietudes.
+- Gestionar preferencias en /profile.
+- Ver recomendacion diaria en /daily.
 
-Autenticacion:
-- Sistema: better-auth.
-- Metodos: email/contrasena, Google, GitHub.
-- Si no hay sesion, la app redirige a /login (excepto rutas publicas permitidas).
+Que NO existe ahora:
+- Editar inquietudes ya creadas.
+- Cambiar foto, nombre o email desde UI.
+- Recuperacion de contrasena en la UI.
+- Adjuntar archivos en este chat.
+- Acciones en lote, export/import, recordatorios, notificaciones.
 
-Preferencias del usuario:
-- Se gestionan en /profile.
-- Se pueden anadir y eliminar.
-- Cuantas mas preferencias utiles tenga el usuario, mejor prioriza la IA.
-- Se recomienda tener al menos 4 preferencias para mejor precision.
-
-Recursos soportados al crear inquietud:
-- URL.
-- Texto libre.
-- Archivo.
-- Solo un recurso por inquietud en el flujo actual.
-
-Tipos de archivo y procesamiento real del backend:
-- PDF: extrae texto con unpdf.
-- Imagen (png/jpg/jpeg/webp/gif/bmp): analisis visual + OCR con Groq vision.
-- Audio (mp3/wav/m4a/ogg/flac): transcripcion con Groq Whisper.
-- Video como archivo directo: no aceptado por este endpoint actualmente.
-  Para video, hay que subirlo a storage externo y enviar una URL de video.
-
-Comportamiento para URL:
-- Si termina en extension de imagen: analiza como imagen.
-- Si termina en extension de video: analiza como video.
-- Si no: se guarda como recurso URL con texto basico "URL: ...".
-- No se hace scraping completo de articulos web en URLs genericas.
-
-Modelo de evaluacion de inquietudes:
-- Estado: raw | usable | solid | actionable.
-- Score: entero de 0 a 100.
-- Factores usados por IA:
-  - relevancia con preferencias,
-  - accionabilidad,
-  - claridad,
-  - impacto,
-  - esfuerzo (inverso),
-  - urgencia.
-- Penalizaciones por falta de datos, vaguedad, dependencias inciertas o conflicto con preferencias.
-
-Que ve el usuario en el panel:
-- Total de inquietudes.
-- Completadas.
-- Tarjetas con:
-  - titulo,
-  - descripcion original,
-  - resumen IA,
-  - puntuacion,
-  - fecha de creacion,
-  - estado de completado.
-- Acciones por tarjeta:
-  - marcar/desmarcar completada,
-  - eliminar.
-
-Recomendacion diaria (/daily):
-- Selecciona la inquietud del usuario con mayor score.
-- Si hay empate practico, se prioriza la mas reciente.
-- Muestra estado, score y resumen para accion inmediata.
-- No hay configuracion manual avanzada de criterios para la recomendacion diaria.
-- Actualmente no excluye automaticamente inquietudes ya completadas.
-
-Estado actual del boton Librain AI en UI:
-- Existe un modal de chat en la interfaz.
-- El chat responde en tiempo real a traves del endpoint /api/librain-assistant.
-- No permite adjuntar archivos dentro del chat.
-- No ejecuta acciones directas sobre datos (solo orienta y responde dudas).
-- No guarda historial persistente tras cerrar sesion o recargar la app.
-
-Mensajes de ayuda que debes poder resolver:
-- "Como creo una inquietud?"
-- "Que formatos acepta?"
-- "Por que no puedo subir video?"
-- "Como mejoro mis resultados IA?"
-- "Como funciona la recomendacion diaria?"
-- "Como marco una inquietud como completada?"
-- "Como elimino una inquietud?"
-- "Como edito mis preferencias?"
-- "Por que me manda a login?"
-
-Limitaciones actuales importantes (debes comunicarlas con total claridad):
-- Perfil:
-  - No se puede cambiar la foto de perfil desde la interfaz actual.
-  - No se puede editar nombre ni email desde /profile.
-  - No hay flujo de cambio de contrasena dentro del perfil.
-  - No hay boton de eliminar cuenta.
-  - Lo unico editable en perfil son las preferencias.
-- Inquietudes:
-  - No se puede editar una inquietud ya creada (titulo, descripcion, score o estado manualmente).
-  - No hay campos de fecha limite, recordatorios ni subtareas.
-  - No hay buscador ni filtros avanzados (por estado, fecha, categoria, etc.).
-  - No hay acciones en lote (borrado masivo, completar varias a la vez).
-  - No hay exportacion/importacion de inquietudes.
-  - No hay versionado ni historial de cambios de una inquietud.
-- Archivos y recursos:
-  - Aunque en la UI aparece "video" como tipo de archivo, el backend no acepta video subido directamente.
-  - No se acepta video subido como archivo en el endpoint de creacion.
-  - Solo se puede subir un archivo por inquietud.
-  - Si la URL no apunta a imagen/video por extension, no se extrae el contenido de la pagina.
-- API y automatizacion:
-  - No existe endpoint publico para editar inquietudes via PUT/PATCH.
-  - El flujo principal de creacion es POST /api/task y borrado por DELETE /api/task/:id.
-  - El chat de Librain AI no esta conectado a herramientas de ejecucion externa.
-- Cuenta y acceso:
-  - No existe modo invitado sin login para usar el panel principal.
-  - No hay flujo explicito de recuperacion de contrasena en la UI actual.
-- Producto:
-  - No hay app movil nativa en este repositorio.
-  - No hay notificaciones push o email de recordatorio implementadas en este proyecto.
-
-Si el usuario pide algo no soportado:
-- Primero di literalmente: "Ahora mismo eso no esta disponible en Librain."
-- Luego explica en 1-2 lineas por que.
-- Despues ofrece alternativa real con pasos usando lo que SI existe hoy.
-- Nunca prometas fechas ni roadmap si no estan confirmados en el codigo.
-
-Buenas practicas que debes recomendar:
-- Escribir descripciones concretas y orientadas a una accion.
-- Mantener preferencias claras y actualizadas.
-- Usar texto limpio al pegar contenido largo.
-- Subir archivos legibles (audio claro, PDF no corrupto, imagen nitida).
-
-Politica de respuesta:
-- No inventes funciones que la app no tiene.
+Reglas:
 - Si algo no existe, dilo claramente y ofrece alternativa real.
-- No pidas ni expongas secretos (API keys, tokens, contrasenas).
-- No des asesoria legal/medica/financiera como si fuera profesional certificada.
-- Si falta contexto, haz 1 pregunta corta para poder ayudar mejor.
-
-Estilo de salida:
-- Respuesta breve por defecto.
-- Si el usuario esta bloqueado, da pasos concretos numerados.
-- Si el usuario pide comparar opciones, usa lista de pros/contras breve.
-- Cierra con una siguiente accion clara.
-- Formato texto plano, nada de formato MD, evitalo a toda costa.
+- No inventes funciones ni endpoints.
+- Respuesta corta por defecto; si el usuario esta bloqueado, da pasos numerados.
+- Evita repetir frases o ideas.
+- No uses markdown, tablas ni bloques de codigo.
+- Si falta contexto, haz una sola pregunta corta.
 `;
 
+function clampInt(
+  value: string | undefined,
+  fallback: number,
+  min: number,
+  max: number
+) {
+  const parsed = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, Math.min(max, parsed));
+}
+
 function sanitizeForPrompt(text: string) {
-  return text.replace(/```/g, "\u0060\u0060\u0060").trim();
+  return text.replace(/```/g, "\u0060\u0060\u0060").replace(/\s+/g, " ").trim();
+}
+
+function shortText(text: string, max: number) {
+  if (text.length <= max) return text;
+  return `${text.slice(0, max)}...`;
+}
+
+function cleanupAssistantOutput(raw: string) {
+  const withoutCodeFences = raw.replace(/```(?:\w+)?/g, "");
+  const lines = withoutCodeFences
+    .replace(/\r/g, "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  const dedupedAdjacent: string[] = [];
+  for (const line of lines) {
+    if (dedupedAdjacent[dedupedAdjacent.length - 1] !== line) {
+      dedupedAdjacent.push(line);
+    }
+  }
+
+  const collapsed = dedupedAdjacent.join("\n").trim();
+  return shortText(collapsed, MAX_ASSISTANT_RESPONSE_CHARS);
+}
+
+function looksBrokenAssistantOutput(text: string) {
+  if (!text || text.length < 2) return true;
+  if (/(.)\1{24,}/.test(text)) return true;
+
+  const lines = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length >= 4) {
+    let repeatedAdjacent = 0;
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i] === lines[i - 1]) repeatedAdjacent++;
+    }
+    if (repeatedAdjacent >= 2) return true;
+  }
+
+  const words = text.toLowerCase().match(/[a-z0-9áéíóúñü]+/gi) ?? [];
+  if (words.length >= 40) {
+    const uniqueRatio = new Set(words).size / words.length;
+    if (uniqueRatio < 0.2) return true;
+  }
+
+  return false;
+}
+
+function extractLatestQuestion(rawMessage: string) {
+  const marker = "Mensaje actual del usuario:";
+  const idx = rawMessage.lastIndexOf(marker);
+  if (idx === -1) return rawMessage.trim();
+  const tail = rawMessage.slice(idx + marker.length).trim();
+  return tail.length > 0 ? tail : rawMessage.trim();
+}
+
+function extractShortHistory(rawMessage: string) {
+  const startMarker = "Historial reciente de la conversacion:";
+  const endMarker = "Mensaje actual del usuario:";
+  const startIdx = rawMessage.indexOf(startMarker);
+  const endIdx = rawMessage.indexOf(endMarker);
+
+  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return "";
+
+  const block = rawMessage
+    .slice(startIdx + startMarker.length, endIdx)
+    .trim()
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (block.length === 0) return "";
+  return shortText(block.slice(-2).join(" | "), 320);
+}
+
+function extractFirstJsonObject(text: string): string {
+  const cleaned = text.replace(/```json|```/g, "").trim();
+
+  if (cleaned.startsWith("{") && cleaned.endsWith("}")) return cleaned;
+
+  const start = cleaned.indexOf("{");
+  if (start === -1) throw new Error("No se encontro un JSON en la respuesta.");
+
+  let depth = 0;
+  for (let i = start; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (ch === "{") depth++;
+    if (ch === "}") depth--;
+    if (depth === 0) return cleaned.slice(start, i + 1).trim();
+  }
+
+  throw new Error("JSON incompleto en la respuesta del modelo.");
+}
+
+function isSimpleGreeting(message: string) {
+  const normalized = message.toLowerCase().trim();
+  return /^(hola|buenas|hey|buenos dias|buenas tardes|buenas noches)$/.test(normalized);
+}
+
+async function ollamaChat(options: {
+  system?: string;
+  user: string;
+  model?: string;
+  temperature?: number;
+  numPredict?: number;
+  timeoutMs?: number;
+}): Promise<string> {
+  const controller = new AbortController();
+  const timeoutMs = options.timeoutMs ?? OLLAMA_TIMEOUT_MS;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: options.model ?? OLLAMA_MODEL,
+        stream: false,
+        keep_alive: OLLAMA_KEEP_ALIVE,
+        options: {
+          temperature: options.temperature ?? 0.2,
+          num_ctx: 2048,
+          num_predict: options.numPredict ?? 220,
+        },
+        messages: [
+          ...(options.system ? [{ role: "system", content: options.system }] : []),
+          { role: "user", content: options.user },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      const raw = await res.text().catch(() => "");
+      throw new Error(`Ollama error ${res.status}: ${raw}`);
+    }
+
+    const data = (await res.json()) as { message?: { content?: string } };
+    const content = data?.message?.content ?? "";
+    return content.trim();
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(
+        `Timeout con Ollama tras ${timeoutMs}ms. Revisa OLLAMA_URL, OLLAMA_MODEL y carga del host.`
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function askLibrainAssistant({
@@ -200,37 +240,70 @@ export async function askLibrainAssistant({
   isLoggedIn,
   preferences,
 }: LibrainAssistantInput): Promise<string> {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("Falta GEMINI_API_KEY");
+  const latestQuestion = extractLatestQuestion(userMessage);
+  const shortHistory = extractShortHistory(userMessage);
+
+  const cleanUserMessage = shortText(
+    sanitizeForPrompt(latestQuestion),
+    MAX_ASSISTANT_MESSAGE_CHARS
+  );
+
+  if (!cleanUserMessage) {
+    return "Escribe tu duda y te ayudo con Librain.";
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  if (isSimpleGreeting(cleanUserMessage)) {
+    return "Hola. Estoy aqui para ayudarte con Librain. Que necesitas resolver?";
+  }
 
-  const prompt = `
-${LIBRAIN_ASSISTANT_KNOWLEDGE}
+  const compactPreferences = (preferences ?? [])
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+    .slice(0, MAX_USER_PREFERENCES)
+    .join(" | ");
 
-Contexto de la sesion actual:
-- Nombre de usuario: ${userName?.trim() || "No disponible"}
-- Ruta actual: ${currentRoute?.trim() || "No disponible"}
-- Sesion iniciada: ${typeof isLoggedIn === "boolean" ? String(isLoggedIn) : "No disponible"}
-- Preferencias declaradas: ${(preferences ?? []).length > 0 ? preferences!.join(" | ") : "Sin preferencias declaradas"}
+  const userPrompt = [
+    "Contexto de sesion:",
+    `- usuario: ${userName?.trim() || "No disponible"}`,
+    `- ruta: ${currentRoute?.trim() || "No disponible"}`,
+    `- login: ${typeof isLoggedIn === "boolean" ? String(isLoggedIn) : "No disponible"}`,
+    `- preferencias: ${compactPreferences || "Sin preferencias"}`,
+    ...(shortHistory ? [`- historial breve: ${shortHistory}`] : []),
+    "",
+    "Pregunta del cliente:",
+    cleanUserMessage,
+    "",
+    "Instruccion final:",
+    "- Responde directo y util.",
+    "- Si hay bloqueo, da pasos concretos.",
+  ].join("\n");
 
-Consulta del cliente:
-"""
-${sanitizeForPrompt(userMessage)}
-"""
+  const attempts = [
+    { temperature: 0.15, numPredict: 220 },
+    { temperature: 0, numPredict: 180 },
+  ];
 
-Instrucciones finales de respuesta:
-- Responde en espanol.
-- Se cordial y amable.
-- Prioriza utilidad practica para el cliente.
-- Si aplica, menciona rutas exactas como /actions/addTask o /profile.
-- Si detectas confusiones, corrige con claridad y sin tono brusco.
-- No inventes capacidades fuera del producto descrito.
-`;
+  for (const attempt of attempts) {
+    try {
+      const raw = await ollamaChat({
+        system: ASSISTANT_SYSTEM_PROMPT,
+        user: userPrompt,
+        temperature: attempt.temperature,
+        numPredict: attempt.numPredict,
+        timeoutMs: OLLAMA_CHAT_TIMEOUT_MS,
+      });
 
-  const result = await model.generateContent(prompt);
-  return result.response.text().trim();
+      const cleaned = cleanupAssistantOutput(raw);
+      if (!looksBrokenAssistantOutput(cleaned)) {
+        return cleaned;
+      }
+    } catch {
+      // Intenta una segunda pasada antes de devolver fallback.
+    }
+  }
+
+  return "Ahora mismo no pude generar una respuesta estable. Prueba a reformular la pregunta en una sola frase.";
 }
 
 export async function generateStoredMetadata(
@@ -238,58 +311,75 @@ export async function generateStoredMetadata(
   userPreferences: string[],
   userDescription?: string
 ): Promise<GeminiStoredResponse> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const compactExtractedText = shortText(
+    sanitizeForPrompt(extractedText),
+    MAX_METADATA_TEXT_CHARS
+  );
+  const compactDescription = shortText(sanitizeForPrompt(userDescription ?? ""), 500);
+  const compactPreferences = (userPreferences ?? [])
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+    .slice(0, MAX_USER_PREFERENCES)
+    .join(" | ");
 
   const prompt = `
-Eres un sistema de clasificacion para Librain.
-Convierte contenido en metadata estructurada para una inquietud.
-
-Contenido extraido:
-"""
-${sanitizeForPrompt(extractedText)}
-"""
-
-Preferencias del usuario:
-"""
-${(userPreferences ?? []).join(" | ")}
-"""
-
-Descripcion del usuario:
-"""
-${sanitizeForPrompt(userDescription ?? "")}
-"""
-
-Debes responder EXCLUSIVAMENTE con JSON valido, sin markdown.
-
-Schema:
+Devuelve SOLO JSON valido con este schema:
 {
   "name": "titulo claro y conciso (max 60 caracteres)",
   "score": 0,
   "descriptionIA": "texto plano maximo 150 caracteres"
 }
 
-Modelo de score:
-- Subpuntuaciones 0-100:
-  - relevanciaPreferencias (30)
-  - accionabilidad (25)
-  - claridad (15)
-  - impacto (10)
-  - esfuerzo inverso (10)
-  - urgencia (10)
-- Penaliza:
-  - -20 si faltan datos para actuar
-  - -15 si es muy vago
-  - -10 si hay dependencias inciertas
-  - -10 si contradice preferencias
-- Redondea entero y limita a 0-100.
+Contenido:
+${compactExtractedText}
 
-Reglas estrictas:
-- descriptionIA: maximo 150 caracteres, sin saltos de linea.
-- JSON parseable.
+Preferencias:
+${compactPreferences || "Sin preferencias"}
+
+Descripcion del usuario:
+${compactDescription || "Sin descripcion"}
+
+Reglas:
+- score entero de 0 a 100
+- descriptionIA maximo 150 caracteres sin saltos de linea
+- sin markdown
 `;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  const cleaned = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(cleaned);
+  const attempts = [170, 130];
+  for (const numPredict of attempts) {
+    try {
+      const text = await ollamaChat({
+        system: "Clasifica y resume. Responde SOLO JSON valido.",
+        user: prompt,
+        temperature: 0,
+        numPredict,
+        timeoutMs: OLLAMA_METADATA_TIMEOUT_MS,
+      });
+
+      const jsonStr = extractFirstJsonObject(text);
+      const parsed = JSON.parse(jsonStr) as GeminiStoredResponse;
+
+      parsed.name = typeof parsed.name === "string" ? parsed.name.slice(0, 60) : "";
+      parsed.descriptionIA =
+        typeof parsed.descriptionIA === "string"
+          ? parsed.descriptionIA.replace(/\r?\n/g, " ").slice(0, 150)
+          : "";
+      parsed.score =
+        typeof parsed.score === "number"
+          ? Math.max(0, Math.min(100, Math.round(parsed.score)))
+          : 0;
+
+      if (parsed.name.length > 0) {
+        return parsed;
+      }
+    } catch {
+      // reintento con menor salida
+    }
+  }
+
+  return {
+    name: shortText(compactDescription || "Inquietud", 60),
+    score: 50,
+    descriptionIA: "No se pudo analizar con precision. Revisar manualmente.",
+  };
 }

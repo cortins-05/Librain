@@ -5,6 +5,12 @@ import { auth } from "@/lib/auth";
 import { askLibrainAssistant } from "@/lib/librainGemini";
 
 export const runtime = "nodejs";
+const DEDUPE_WINDOW_MS = 2500;
+const RESPONSE_CACHE_TTL_MS = 15000;
+const recentResponsesByUser = new Map<
+  string,
+  { fingerprint: string; answer: string; at: number }
+>();
 
 type RequestBody = {
   message?: unknown;
@@ -19,6 +25,10 @@ type HistoryEntry = {
 
 function toTrimmedString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeText(value: string) {
+  return value.replace(/\s+/g, " ").trim();
 }
 
 function normalizeHistory(input: unknown): HistoryEntry[] {
@@ -48,15 +58,23 @@ export async function POST(request: Request) {
 
     const body = (await request.json().catch(() => null)) as RequestBody | null;
 
-    const message = toTrimmedString(body?.message).slice(0, 4000);
+    const message = normalizeText(toTrimmedString(body?.message)).slice(0, 4000);
     if (!message) {
       return NextResponse.json({ error: "Falta el mensaje" }, { status: 400 });
     }
 
-    const currentRoute = toTrimmedString(body?.currentRoute).slice(0, 120);
+    const currentRoute = normalizeText(toTrimmedString(body?.currentRoute)).slice(0, 120);
     const history = normalizeHistory(body?.history);
+    const historyWithoutEcho = [...history];
+    const lastHistoryEntry = historyWithoutEcho[historyWithoutEcho.length - 1];
+    if (
+      lastHistoryEntry?.role === "user" &&
+      normalizeText(lastHistoryEntry.content).toLowerCase() === message.toLowerCase()
+    ) {
+      historyWithoutEcho.pop();
+    }
 
-    const historyContext = history
+    const historyContext = historyWithoutEcho
       .map((entry) => `${entry.role === "assistant" ? "Asistente" : "Usuario"}: ${entry.content}`)
       .join("\n");
 
@@ -73,6 +91,29 @@ export async function POST(request: Request) {
           .filter((item) => item.length > 0)
       : [];
 
+    const userId = toTrimmedString((session.user as { id?: unknown }).id) || "anonymous";
+    const fingerprint = [
+      message.toLowerCase(),
+      currentRoute.toLowerCase(),
+      historyWithoutEcho
+        .slice(-2)
+        .map((entry) => `${entry.role}:${normalizeText(entry.content).toLowerCase()}`)
+        .join("|"),
+      preferences.slice(0, 6).map((value) => value.toLowerCase()).join("|"),
+    ].join("::");
+
+    const now = Date.now();
+    for (const [key, value] of recentResponsesByUser.entries()) {
+      if (now - value.at > RESPONSE_CACHE_TTL_MS) {
+        recentResponsesByUser.delete(key);
+      }
+    }
+
+    const recent = recentResponsesByUser.get(userId);
+    if (recent && recent.fingerprint === fingerprint && now - recent.at < DEDUPE_WINDOW_MS) {
+      return NextResponse.json({ answer: recent.answer, deduped: true });
+    }
+
     const answer = await askLibrainAssistant({
       userMessage: composedUserMessage,
       userName: toTrimmedString(session.user.name),
@@ -85,7 +126,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Respuesta vacia del asistente" }, { status: 502 });
     }
 
-    return NextResponse.json({ answer: answer.trim() });
+    const trimmedAnswer = answer.trim();
+    recentResponsesByUser.set(userId, {
+      fingerprint,
+      answer: trimmedAnswer,
+      at: now,
+    });
+
+    return NextResponse.json({ answer: trimmedAnswer });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error desconocido";
     console.error("[POST /api/librain-assistant]", error);

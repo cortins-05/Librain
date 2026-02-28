@@ -34,12 +34,21 @@ const WELCOME_MESSAGE: ChatMessage = {
 };
 
 export default function IAButton({ className }: { className: string }) {
+  const MAX_INPUT_CHARS = 2000;
+  const REQUEST_TIMEOUT_MS = 20000;
+  const DUPLICATE_WINDOW_MS = 1800;
+  const MAX_MESSAGES = 30;
+
   const pathname = usePathname();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef<ChatMessage[]>([WELCOME_MESSAGE]);
+  const inFlightRef = useRef(false);
+  const activeControllerRef = useRef<AbortController | null>(null);
+  const lastSentRef = useRef<{ normalized: string; at: number } | null>(null);
 
   useEffect(() => {
     const element = scrollRef.current;
@@ -47,9 +56,35 @@ export default function IAButton({ className }: { className: string }) {
     element.scrollTop = element.scrollHeight;
   }, [messages, isLoading]);
 
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
+    return () => {
+      activeControllerRef.current?.abort();
+    };
+  }, []);
+
   async function sendMessage() {
-    const text = input.trim();
-    if (!text || isLoading) return;
+    const text = input.replace(/\s+/g, " ").trim();
+    if (!text || inFlightRef.current) return;
+
+    if (text.length > MAX_INPUT_CHARS) {
+      setError(`El mensaje supera el limite (${MAX_INPUT_CHARS} caracteres).`);
+      return;
+    }
+
+    const normalized = text.toLowerCase();
+    const now = Date.now();
+    if (
+      lastSentRef.current &&
+      lastSentRef.current.normalized === normalized &&
+      now - lastSentRef.current.at < DUPLICATE_WINDOW_MS
+    ) {
+      return;
+    }
+    lastSentRef.current = { normalized, at: now };
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -57,19 +92,24 @@ export default function IAButton({ className }: { className: string }) {
       content: text,
     };
 
-    const historyForApi = [...messages, userMessage]
+    const historyForApi = [...messagesRef.current, userMessage]
       .slice(-8)
       .map(({ role, content }) => ({ role, content }));
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage].slice(-MAX_MESSAGES));
     setInput("");
     setError(null);
+    inFlightRef.current = true;
     setIsLoading(true);
+    const controller = new AbortController();
+    activeControllerRef.current = controller;
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     try {
       const response = await fetch("/api/librain-assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           message: text,
           currentRoute: pathname,
@@ -89,30 +129,55 @@ export default function IAButton({ className }: { className: string }) {
       }
 
       setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: answer,
-        },
-      ]);
+        ...(() => {
+          const last = prev[prev.length - 1];
+          if (last?.role === "assistant" && last.content === answer) {
+            return prev;
+          }
+          return [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              role: "assistant" as const,
+              content: answer,
+            },
+          ];
+        })(),
+      ].slice(-MAX_MESSAGES));
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Hubo un problema al responder. Intentalo otra vez.";
+        err instanceof Error && err.name === "AbortError"
+          ? "Tiempo de espera agotado. Revisa que Ollama este activo y vuelve a intentar."
+          : err instanceof Error
+            ? err.message
+            : "Hubo un problema al responder. Intentalo otra vez.";
 
       setError(message);
       setMessages((prev) => [
         ...prev,
         {
           id: crypto.randomUUID(),
-          role: "assistant",
+          role: "assistant" as const,
           content:
             "Ahora mismo no pude responder correctamente. Si quieres, vuelve a intentarlo en unos segundos.",
         },
-      ]);
+      ].slice(-MAX_MESSAGES));
     } finally {
+      clearTimeout(timeout);
+      if (activeControllerRef.current === controller) {
+        activeControllerRef.current = null;
+      }
+      inFlightRef.current = false;
       setIsLoading(false);
     }
+  }
+
+  function handleInputChange(value: string) {
+    if (value.length <= MAX_INPUT_CHARS) {
+      setInput(value);
+      return;
+    }
+    setInput(value.slice(0, MAX_INPUT_CHARS));
   }
 
   return (
@@ -124,7 +189,7 @@ export default function IAButton({ className }: { className: string }) {
           size="icon-lg"
           className="flex items-center justify-center gap-2 hover:border-primary transition-all rounded-2xl"
         >
-          <Image 
+          <Image
             src={"/LibrainAI.png"}
             alt="Librain"
             width={120}
@@ -173,7 +238,7 @@ export default function IAButton({ className }: { className: string }) {
         <div className="border-t px-4 py-3 bg-muted/30 flex gap-2">
           <Input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
@@ -202,4 +267,3 @@ export default function IAButton({ className }: { className: string }) {
     </Dialog>
   );
 }
-
