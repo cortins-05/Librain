@@ -283,7 +283,6 @@ export async function POST(req: Request) {
     const storedDoc = await StoredModel.create({
       user: new Types.ObjectId(session.user.id),
       name: aiData.name,
-      state: aiData.state,
       score,
       description: description ?? "",
       descriptionIA: aiData.descriptionIA,

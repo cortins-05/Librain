@@ -14,48 +14,11 @@ import {
 
 import { auth } from "@/lib/auth";
 import { dbConnect } from "@/db/dbConnect";
-import StoredModel, {
-  STORED_STATES,
-  type StoredState,
-} from "@/db/Models/Task/Task.model";
+import StoredModel from "@/db/Models/Task/Task.model";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-
-const STATE_SET = new Set<StoredState>(STORED_STATES);
-
-const stateUI: Record<
-  StoredState,
-  {
-    label: string;
-    badgeClass: string;
-  }
-> = {
-  raw: {
-    label: "inicial",
-    badgeClass: "border-muted-foreground/20 bg-muted/40 text-muted-foreground",
-  },
-  usable: {
-    label: "utilizable",
-    badgeClass: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-400",
-  },
-  solid: {
-    label: "sólida",
-    badgeClass: "border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-400",
-  },
-  actionable: {
-    label: "accionable",
-    badgeClass:
-      "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  },
-};
-
-function normalizeState(value: unknown): StoredState {
-  return typeof value === "string" && STATE_SET.has(value as StoredState)
-    ? (value as StoredState)
-    : "raw";
-}
 
 function normalizeScore(value: unknown): number {
   return typeof value === "number" ? Math.max(0, Math.min(100, Math.round(value))) : 0;
@@ -113,7 +76,6 @@ export default async function DailyTaskPage() {
       name?: unknown;
       description?: unknown;
       descriptionIA?: unknown;
-      state?: unknown;
       score?: unknown;
       createdAt?: unknown;
       completedAt?: unknown;
@@ -172,7 +134,6 @@ export default async function DailyTaskPage() {
             const description = typeof topTask.description === "string" ? topTask.description : "";
             const descriptionIA =
               typeof topTask.descriptionIA === "string" ? topTask.descriptionIA : "";
-            const state = normalizeState(topTask.state);
             const score = normalizeScore(topTask.score);
             const category =
               typeof topTask.category === "string" && topTask.category.trim().length > 0
@@ -180,8 +141,6 @@ export default async function DailyTaskPage() {
                 : null;
             const createdAt = safeDateLabel(topTask.createdAt);
             const completedAt = topTask.completedAt ? safeDateLabel(topTask.completedAt) : "Pendiente";
-            const isCompleted = state === "actionable" || Boolean(topTask.completedAt);
-            const ui = stateUI[state];
 
             return (
               <Card className="group relative overflow-hidden border border-border/70 bg-card/80 shadow-sm backdrop-blur transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4 [animation-delay:70ms]">
@@ -207,15 +166,6 @@ export default async function DailyTaskPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide",
-                        ui.badgeClass
-                      )}
-                    >
-                      {ui.label}
-                    </Badge>
                     <Badge
                       variant="outline"
                       className="rounded-full border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary"
@@ -279,9 +229,6 @@ export default async function DailyTaskPage() {
                 </CardContent>
 
                 <CardFooter className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 bg-muted/15 px-6 py-4">
-                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {isCompleted ? "Completada" : "Pendiente de acción"}
-                  </span>
                   <Button asChild variant="outline">
                     <Link href="/">
                       Ver todas las inquietudes
