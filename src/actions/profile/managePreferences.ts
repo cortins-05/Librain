@@ -3,6 +3,49 @@
 import { dbConnect } from "@/db/dbConnect";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import StoredModel from "@/db/Models/Task/Task.model";
+import { generateStoredMetadata } from "@/lib/librainGemini";
+
+/**
+ * Reevalúa todas las tareas del usuario con las nuevas preferencias
+ */
+async function reevaluateUserTasks(userId: string, preferences: string[]) {
+  await dbConnect();
+  
+  // Obtener todas las tareas del usuario que no están completadas
+  const tasks = await StoredModel.find({
+    user: userId,
+    completedAt: { $exists: false }
+  });
+
+  // Si no hay tareas, no hacer nada
+  if (tasks.length === 0) {
+    return;
+  }
+
+  // Reevaluar cada tarea con las nuevas preferencias
+  const reevaluationPromises = tasks.map(async (task) => {
+    try {
+      // Generar nueva metadata usando descripción existente
+      const { score, descriptionIA } = await generateStoredMetadata(
+        task.description || task.descriptionIA,
+        preferences,
+        task.description
+      );
+
+      // Actualizar score y descripción IA
+      await StoredModel.updateOne(
+        { _id: task._id },
+        { $set: { score, descriptionIA } }
+      );
+    } catch (error) {
+      console.error(`Error reevaluando tarea ${task._id}:`, error);
+      // Continuar con las demás tareas si una falla
+    }
+  });
+
+  await Promise.all(reevaluationPromises);
+}
 
 export async function addPreferenceAction(name: string) {
   await dbConnect();
@@ -27,6 +70,8 @@ export async function addPreferenceAction(name: string) {
     }
   })
 
+  // Reevaluar tareas con las nuevas preferencias
+  await reevaluateUserTasks(session.user.id, preferences);
     
   return {
     status
@@ -46,5 +91,9 @@ export async function deletePreferenceAction(name:string) {
       preferences: prefePulidas
     }
   })
+
+  // Reevaluar tareas con las nuevas preferencias
+  await reevaluateUserTasks(session.user.id, prefePulidas);
+
   return status;
 }
