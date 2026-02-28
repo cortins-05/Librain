@@ -10,7 +10,7 @@ export function ThemeProvider({
   return (
     <NextThemesProvider
       {...props}
-      themes={["light", "dark", "system", "custom"]}
+      themes={["light", "dark", "system"]}
     >
       {children}
     </NextThemesProvider>

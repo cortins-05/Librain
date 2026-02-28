@@ -6,7 +6,9 @@ export default function HomePage() {
       <main className="p-10">
         <ThemeButton />
       </main>
+      
       <h1>Hello Page</h1>
+      
     </div>
   );
 }
