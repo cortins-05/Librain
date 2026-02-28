@@ -10,9 +10,7 @@ import {
 export function AppSidebar() {
   return (
     <Sidebar>
-      <SidebarHeader> 
-        <h1 className="text-xl font-bold">My App</h1>;
-      </SidebarHeader>
+      <SidebarHeader />
       <SidebarContent>
         <SidebarGroup />
         <SidebarGroup />
