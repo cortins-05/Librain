@@ -1,3 +1,5 @@
+export const dynaic = "force-dynamic";
+
 import { Button } from '@/components/ui/button';
 import { dbConnect } from '@/db/dbConnect';
 import StoredModel, { STORED_STATES } from '@/db/Models/Stored/main.model';
