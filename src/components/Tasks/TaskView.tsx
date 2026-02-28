@@ -43,11 +43,11 @@ export default function TaskView({
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const { id, name, description, descriptionIA, state, score, createdAt, completedAt } =
+  const { id, name, description, descriptionIA, score, createdAt, completedAt } =
     task;
   const displayName = name.trim() || "inquietud sin título";
 
-  const isCompleted = Boolean(completedAt) || state === "actionable";
+  const isCompleted = Boolean(completedAt);
   const createdLabel = safeDateLabel(createdAt);
   const completedLabel = completedAt ? safeDateLabel(completedAt) : null;
   const shortId = id.length > 12 ? `${id.slice(0, 4)}...${id.slice(-4)}` : id;
