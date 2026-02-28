@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   mongodb:
@@ -13,5 +13,30 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: librainOllama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: librainOllamaInit
+    depends_on:
+      - ollama
+    restart: "no"
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: ["/bin/sh", "-lc"]
+    command:
+      - >
+        until ollama --host http://ollama:11434 list >/dev/null 2>&1;
+        do sleep 1; done;
+        ollama --host http://ollama:11434 pull llama3.2-vision:11b
+
 volumes:
   mongo_data:
+  ollama_data:
