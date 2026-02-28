@@ -28,12 +28,12 @@ interface OllamaGenerateResponse {
 
 const OLLAMA_ENDPOINT =
   process.env.OLLAMA_ENDPOINT ?? "http://127.0.0.1:11434/api/generate";
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "llama3.2:3b-instruct";
-const parsedOllamaTimeout = Number(process.env.OLLAMA_TIMEOUT_MS ?? "45000");
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "llama3.2:3b";
+const parsedOllamaTimeout = Number(process.env.OLLAMA_TIMEOUT_MS ?? "120000");
 const OLLAMA_TIMEOUT_MS =
   Number.isFinite(parsedOllamaTimeout) && parsedOllamaTimeout > 0
     ? parsedOllamaTimeout
-    : 45000;
+    : 120000;
 const BASE_PROMPT_PATH = path.join(process.cwd(), "src", "IA", "BASEPrompt.md");
 
 let basePromptCache: string | null = null;
@@ -43,6 +43,87 @@ function isStoredState(value: unknown): value is StoredState {
     typeof value === "string" &&
     (STORED_STATES as readonly string[]).includes(value)
   );
+}
+
+function normalizeState(value: unknown): StoredState | null {
+  if (isStoredState(value)) {
+    return value;
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "usable" : "raw";
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    if (value >= 3) return "actionable";
+    if (value >= 2) return "solid";
+    if (value >= 1) return "usable";
+    return "raw";
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/['"`.,;:!?()[\]{}]/g, "")
+    .replace(/[\s_-]+/g, "");
+
+  switch (normalized) {
+    case "raw":
+    case "borrador":
+    case "insuficiente":
+    case "incompleto":
+    case "caotico":
+      return "raw";
+    case "usable":
+    case "useable":
+    case "util":
+    case "aprovechable":
+    case "entendible":
+      return "usable";
+    case "solid":
+    case "solido":
+    case "structured":
+    case "estructurado":
+      return "solid";
+    case "actionable":
+    case "accionable":
+    case "ejecutable":
+      return "actionable";
+    default:
+      if (normalized.includes("action") || normalized.includes("accion")) {
+        return "actionable";
+      }
+      if (normalized.includes("solid") || normalized.includes("estructur")) {
+        return "solid";
+      }
+      if (
+        normalized.includes("usable") ||
+        normalized.includes("aprovech") ||
+        normalized.includes("util")
+      ) {
+        return "usable";
+      }
+      if (
+        normalized.includes("raw") ||
+        normalized.includes("insuf") ||
+        normalized.includes("caot")
+      ) {
+        return "raw";
+      }
+      return null;
+  }
+}
+
+function inferStateFromScore(score: number): StoredState {
+  if (score >= 85) return "actionable";
+  if (score >= 65) return "solid";
+  if (score >= 35) return "usable";
+  return "raw";
 }
 
 function parseJsonObject(text: string): unknown {
@@ -72,30 +153,64 @@ function normalizeGeneratedTask(result: unknown): TaskGenerationResult {
   const payload = result as Record<string, unknown>;
   const descriptionIA =
     typeof payload.descriptionIA === "string" ? payload.descriptionIA.trim() : "";
-  const state = payload.state;
+  let normalizedState = normalizeState(payload.state);
   const numericScore =
     typeof payload.score === "number"
       ? payload.score
       : typeof payload.score === "string"
         ? Number(payload.score)
         : Number.NaN;
+        
+  const normalizedScore: number | null = Number.isFinite(numericScore)
+    ? Math.max(0, Math.min(100, Math.round(numericScore)))
+    : null;
 
   if (!descriptionIA) {
     throw new Error("descriptionIA is missing");
   }
 
-  if (!isStoredState(state)) {
-    throw new Error("state is invalid");
+  if (!normalizedState && normalizedScore !== null) {
+    normalizedState = inferStateFromScore(normalizedScore);
   }
 
-  if (!Number.isFinite(numericScore)) {
+  if (!normalizedState && normalizedScore === null) {
+    throw new Error(
+      `Payload inválido: state="${String(payload.state)}", score="${String(payload.score)}"`
+    );
+  }
+
+  if (!normalizedState) {
+    throw new Error(`state is invalid: ...`);
+  }
+
+  if (normalizedScore === null) {
     throw new Error("score is invalid");
   }
 
   return {
     descriptionIA,
-    state,
-    score: Math.max(0, Math.min(100, Math.round(numericScore))),
+    state: normalizedState,
+    score: normalizedScore,
+  };
+}
+
+function buildFallbackTaskMetadata(
+  input: TaskBody,
+  preferences: string[]
+): TaskGenerationResult {
+  const prefText =
+    preferences.length > 0 ? preferences.join(", ") : "sin preferencias definidas";
+
+  return {
+    descriptionIA: [
+      "No se pudo generar metadata con IA en este momento.",
+      `Descripcion original: ${input.description}`,
+      `Recurso: ${input.resource}`,
+      `Preferencias del usuario: ${prefText}`,
+      "La tarea se guardo con valores seguros y puede reintentarse el analisis despues.",
+    ].join("\n"),
+    state: "raw",
+    score: 0,
   };
 }
 
@@ -105,6 +220,10 @@ async function getBasePrompt(): Promise<string> {
   }
 
   basePromptCache = await readFile(BASE_PROMPT_PATH, "utf8");
+  if (!basePromptCache.trim()) {
+    basePromptCache = null;
+    throw new Error("BASEPrompt.md está vacío");
+  }
   return basePromptCache;
 }
 
@@ -132,17 +251,35 @@ async function generateTaskMetadata(
     "Devuelve exclusivamente JSON valido con descriptionIA, state y score.",
   ].join("\n");
 
-  const ollamaResponse = await fetch(OLLAMA_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    signal: AbortSignal.timeout(OLLAMA_TIMEOUT_MS),
-    body: JSON.stringify({
-      model: OLLAMA_MODEL,
-      prompt,
-      stream: false,
-      format: "json",
-    }),
+  const requestBody = JSON.stringify({
+    model: OLLAMA_MODEL,
+    prompt,
+    stream: false,
+    format: "json",
+    keep_alive: "10m",
   });
+
+  let ollamaResponse: Response;
+  try {
+    ollamaResponse = await fetch(OLLAMA_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(OLLAMA_TIMEOUT_MS),
+      body: requestBody,
+    });
+  } catch (err) {
+    // First load of a model can be slow; one retry usually recovers this case.
+    if (err instanceof Error && err.name === "TimeoutError") {
+      ollamaResponse = await fetch(OLLAMA_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(OLLAMA_TIMEOUT_MS * 2),
+        body: requestBody,
+      });
+    } else {
+      throw err;
+    }
+  }
 
   if (!ollamaResponse.ok) {
     const errorBody = await ollamaResponse.text();
@@ -205,16 +342,18 @@ export async function POST(request: Request) {
     : [];
 
   let generatedTask: TaskGenerationResult;
+  let ollamaError: string | null = null;
   try {
     generatedTask = await generateTaskMetadata(
       { resource, value, description },
       preferences
     );
   } catch (err) {
+    ollamaError = err instanceof Error ? err.message : "Unknown Ollama error";
     console.error("[POST /api/task] Ollama generation failed", err);
-    return NextResponse.json(
-      { error: "Failed to generate task metadata with Ollama" },
-      { status: 502 }
+    generatedTask = buildFallbackTaskMetadata(
+      { resource, value, description },
+      preferences
     );
   }
 
@@ -230,7 +369,16 @@ export async function POST(request: Request) {
       score: generatedTask.score,
     });
 
-    return NextResponse.json({ stored }, { status: 201 });
+    return NextResponse.json(
+      {
+        stored,
+        ai: {
+          fallback: Boolean(ollamaError),
+          error: ollamaError,
+        },
+      },
+      { status: 201 }
+    );
   } catch (err) {
     console.error("[POST /api/task] database error", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -104,6 +104,7 @@ export default function MainComponentAddTask() {
                     &&
                     <Input 
                         type="file"
+                        onChange={(e)=>setValue1(e.target.value)}
                     />
                 }
             </div>

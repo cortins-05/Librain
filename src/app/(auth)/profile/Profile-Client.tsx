@@ -2,10 +2,11 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { BadgeCheck, CalendarClock, Mail, Sparkles, User } from "lucide-react";
+import { BadgeCheck, CalendarClock, Mail, Sparkles, User, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ProfileClientProps {
   name: string;
@@ -106,7 +107,7 @@ export default function ProfileClient({
         <aside className="flex flex-col gap-6">
 
           {/* Preferences */}
-          <Card className="border-border bg-card-foreground/60 text-card-foreground shadow-md">
+          <Card className="border-border bg-card-foreground/60 text-card-foreground shadow-md relative">
             <CardHeader className="px-6 pb-3 pt-5">
               <CardTitle className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest">
                 <Sparkles className="size-3.5" />
@@ -132,19 +133,12 @@ export default function ProfileClient({
                 </p>
               )}
             </CardContent>
-          </Card>
-
-          {/* Activity */}
-          <Card className="border-border bg-card-foreground/60 text-card-foreground shadow-md">
-            <CardHeader className="px-6 pb-3 pt-5">
-              <CardTitle className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest">
-                <User className="size-3.5" />
-                Actividad
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-5 px-6 pb-6">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
+            <Button className="absolute top-7 right-3" variant={"ghost"} size={"sm"}>
+              <Plus/>
+            </Button>
+            <CardFooter className="w-full">
+              <div className="space-y-2 w-full">
+                <div className="flex items-center justify-between w-full">
                   <span className="text-xs">
                     Preferencias guardadas
                   </span>
@@ -157,19 +151,7 @@ export default function ProfileClient({
                   className="h-1.5"
                 />
               </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">
-                    Estado de perfil
-                  </span>
-                  <span className="text-xs font-semibold">
-                    Activo
-                  </span>
-                </div>
-                <Progress value={82} className="h-1.5" />
-              </div>
-            </CardContent>
+            </CardFooter>
           </Card>
 
         </aside>
