@@ -4,96 +4,178 @@ import { dbConnect } from "@/db/dbConnect";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import StoredModel from "@/db/Models/Task/Task.model";
-import { generateStoredMetadata } from "@/lib/librainGemini";
+import { generateStoredMetadata } from "@/lib/gemini";
 
-/**
- * Reevalúa todas las tareas del usuario con las nuevas preferencias
- */
-async function reevaluateUserTasks(userId: string, preferences: string[]) {
-  await dbConnect();
-  
-  // Obtener todas las tareas del usuario que no están completadas
-  const tasks = await StoredModel.find({
-    user: userId,
-    completedAt: { $exists: false }
-  });
+function normalizePreference(value: string) {
+  return value.trim();
+}
 
-  // Si no hay tareas, no hacer nada
-  if (tasks.length === 0) {
-    return;
+function normalizePreferences(values: string[] | undefined) {
+  const source = Array.isArray(values) ? values : [];
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+
+  for (const raw of source) {
+    if (typeof raw !== "string") continue;
+    const value = raw.trim();
+    if (!value) continue;
+
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    normalized.push(value);
   }
 
-  // Reevaluar cada tarea con las nuevas preferencias
-  const reevaluationPromises = tasks.map(async (task) => {
-    try {
-      // Generar nueva metadata usando descripción existente
-      const { score } = await generateStoredMetadata(
-        task.description || task.descriptionIA,
-        preferences,
-        task.description
-      );
+  return normalized;
+}
 
-      // Actualizar solo el score
-      await StoredModel.updateOne(
-        { _id: task._id },
-        { $set: { score } }
-      );
-    } catch (error) {
-      console.error(`Error reevaluando tarea ${task._id}:`, error);
-      // Continuar con las demás tareas si una falla
-    }
+async function reevaluateUserTasks(userId: string, preferences: string[]) {
+  await dbConnect();
+
+  const tasks = await StoredModel.find({
+    user: userId,
+    $or: [{ completedAt: { $exists: false } }, { completedAt: null }],
   });
 
-  await Promise.all(reevaluationPromises);
+  if (tasks.length === 0) {
+    return { processed: 0, failed: 0 };
+  }
+
+  let processed = 0;
+  let failed = 0;
+
+  await Promise.all(
+    tasks.map(async (task) => {
+      try {
+        const contentToAnalyze =
+          task.sourceContent || task.description || task.descriptionIA || task.name;
+
+        const { score } = await generateStoredMetadata(
+          contentToAnalyze,
+          preferences,
+          task.description
+        );
+
+        await StoredModel.updateOne(
+          { _id: task._id },
+          { $set: { score } }
+        );
+
+        processed += 1;
+      } catch (error) {
+        failed += 1;
+        console.error(`Error reevaluando tarea ${task._id}:`, error);
+      }
+    })
+  );
+
+  return { processed, failed };
 }
 
 export async function addPreferenceAction(name: string) {
   await dbConnect();
 
-  if (name.length==0) {
-    throw new Error("Nombre no válido");
-  }
+  const session = await auth.api.getSession({ headers: await headers() });
 
-  const session = await auth.api.getSession({headers: await headers()});
-
-  if(!session?.user){
+  if (!session?.user) {
     throw new Error("Usuario no válido");
   }
 
-  const preferences = session.user.preferences;
-  preferences.push(name);
+  const newPreference = normalizePreference(name);
+  if (!newPreference) {
+    throw new Error("Nombre no válido");
+  }
 
-  const {status} = await auth.api.updateUser({
+  const currentPreferences = normalizePreferences(session.user.preferences);
+  const alreadyExists = currentPreferences.some(
+    (pre) => pre.toLowerCase() === newPreference.toLowerCase()
+  );
+
+  const nextPreferences = alreadyExists
+    ? currentPreferences
+    : [...currentPreferences, newPreference];
+
+  const { status } = await auth.api.updateUser({
     headers: await headers(),
     body: {
-        preferences
-    }
-  })
+      preferences: nextPreferences,
+    },
+  });
 
-  // Reevaluar tareas con las nuevas preferencias
-  await reevaluateUserTasks(session.user.id, preferences);
-    
-  return {
-    status
+  if (!status) {
+    throw new Error("No se pudieron actualizar las preferencias");
   }
-    
+
+  let reevaluation = { processed: 0, failed: 0 };
+  let reevaluationWarning: string | null = null;
+
+  if (!alreadyExists) {
+    try {
+      reevaluation = await reevaluateUserTasks(session.user.id, nextPreferences);
+      if (reevaluation.failed > 0) {
+        reevaluationWarning = "Algunas tareas no se pudieron reevaluar";
+      }
+    } catch (error) {
+      console.error("Error general de reevaluación:", error);
+      reevaluationWarning = "No se pudo completar la reevaluación de tareas";
+    }
+  }
+
+  return {
+    status,
+    preferences: nextPreferences,
+    reevaluation,
+    reevaluationWarning,
+  };
 }
 
-export async function deletePreferenceAction(name:string) {
+export async function deletePreferenceAction(name: string) {
   await dbConnect();
-  const session = await auth.api.getSession({headers:await headers()});
-  if(!session) return;
-  const preferences = session.user.preferences;
-  const prefePulidas = preferences.filter(pre=>pre!=name);
-  const {status} = await auth.api.updateUser({
+
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) {
+    throw new Error("Usuario no válido");
+  }
+
+  const preferenceToDelete = normalizePreference(name);
+  if (!preferenceToDelete) {
+    throw new Error("Nombre no válido");
+  }
+
+  const currentPreferences = normalizePreferences(session.user.preferences);
+  const nextPreferences = currentPreferences.filter(
+    (pre) => pre.toLowerCase() !== preferenceToDelete.toLowerCase()
+  );
+
+  const { status } = await auth.api.updateUser({
     headers: await headers(),
     body: {
-      preferences: prefePulidas
+      preferences: nextPreferences,
+    },
+  });
+
+  if (!status) {
+    throw new Error("No se pudieron actualizar las preferencias");
+  }
+
+  let reevaluation = { processed: 0, failed: 0 };
+  let reevaluationWarning: string | null = null;
+
+  try {
+    reevaluation = await reevaluateUserTasks(session.user.id, nextPreferences);
+    if (reevaluation.failed > 0) {
+      reevaluationWarning = "Algunas tareas no se pudieron reevaluar";
     }
-  })
+  } catch (error) {
+    console.error("Error general de reevaluación:", error);
+    reevaluationWarning = "No se pudo completar la reevaluación de tareas";
+  }
 
-  // Reevaluar tareas con las nuevas preferencias
-  await reevaluateUserTasks(session.user.id, prefePulidas);
-
-  return status;
+  return {
+    status,
+    preferences: nextPreferences,
+    reevaluation,
+    reevaluationWarning,
+  };
 }

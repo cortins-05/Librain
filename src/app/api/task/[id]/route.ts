@@ -37,6 +37,8 @@ export async function DELETE(_request: Request, context: RouteContext) {
     if (!deleted) {
       return NextResponse.json({ error: "inquietud no encontrada" }, { status: 404 });
     }
+    
+    console.log(`🗑️ Tarea eliminada (ID: ${id}). Contenido original limpiado automáticamente.`);
 
     return NextResponse.json({ ok: true, deletedId: id });
   } catch (err) {
