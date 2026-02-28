@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ClipboardList, Sparkles } from "lucide-react";
+import { ArrowRight, ClipboardList, LightbulbIcon, Sparkles } from "lucide-react";
 
 import TaskView from "./TaskView";
 import type { TaskListItem } from "./types";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default function ViewTasks({ tasks }: { tasks: TaskListItem[] }) {
+export default function ViewTasks({ tasks, type }: { tasks: TaskListItem[], type: "completadas" | "pendientes" }) {
   if (tasks.length === 0) {
     return (
       <section className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
@@ -19,18 +19,26 @@ export default function ViewTasks({ tasks }: { tasks: TaskListItem[] }) {
               <ClipboardList className="size-5" />
             </span>
             <div className="space-y-2">
-              <h2 className="text-2xl font-semibold sm:text-3xl">Aún no hay inquietudes</h2>
+              <h2 className="text-2xl font-semibold sm:text-3xl">Aún no hay inquietudes <span className="text-blue-700">{type == "completadas" ? "COMPLETADAS" : "PENDIENTES"}</span> </h2>
               <p className="max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
                 Empieza cargando una URL, un texto o un archivo. Librain te devolverá un resumen
                 IA, estado de madurez y puntuación para priorizar.
               </p>
             </div>
-            <Button asChild size="lg">
-              <Link href="/actions/addTask">
-                Crear primera inquietud
-                <ArrowRight />
-              </Link>
-            </Button>
+            {
+              type == "pendientes"
+              ?
+              <Button asChild size="lg">
+                <Link href="/actions/addTask">
+                  Crear primera inquietud
+                  <ArrowRight />
+                </Link>
+              </Button>
+              :
+              <Button asChild size={"lg"}>
+                <span><LightbulbIcon className="text-yellow-500 font-bold"/> Sigue así, eres una máquina</span>
+              </Button>
+            }
           </CardContent>
         </Card>
       </section>

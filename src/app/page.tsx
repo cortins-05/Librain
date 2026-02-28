@@ -1,17 +1,15 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ListTodo, Plus } from "lucide-react";
-
-import ViewTasks from "@/components/Tasks/ViewTasks";
+import { ArrowRight, Plus } from "lucide-react";
 import type { TaskListItem } from "@/components/Tasks/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { dbConnect } from "@/db/dbConnect";
 import StoredModel from "@/db/Models/Task/Task.model";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import TasksDashboard from "@/components/Tasks/TasksDashboard";
 
 function toIsoOrNow(value: unknown): string {
   if (value instanceof Date) {
@@ -52,10 +50,13 @@ export default async function HomePage() {
     completedAt: task.completedAt ? toIsoOrNow(task.completedAt) : null,
   }));
 
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(
-    (task) => Boolean(task.completedAt)
-  ).length;
+  const completedTasks: TaskListItem[] = [];
+  const unCompletedTasks: TaskListItem[] = [];
+
+  tasks.forEach(task=>{
+    if(Boolean(task.completedAt)) completedTasks.push(task);
+    else unCompletedTasks.push(task);
+  })
 
   return (
     <main className="relative isolate flex-1 overflow-y-auto px-4 py-8 md:px-10 md:py-10">
@@ -97,29 +98,10 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="grid gap-4 grid-cols-2">
-          <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 backdrop-blur duration-500">
-            <CardContent className="space-y-2 py-6">
-              <span className="inline-flex rounded-lg border border-primary/20 bg-primary/10 p-2 text-primary">
-                <ListTodo className="size-4" />
-              </span>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total de <span className="text-red-400">ya lo haré...</span></p>
-              <p className="text-2xl font-semibold">{totalTasks}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 backdrop-blur duration-500 [animation-delay:140ms]">
-            <CardContent className="space-y-2 py-6">
-              <span className="inline-flex rounded-lg border border-sky-500/20 bg-sky-500/10 p-2 text-sky-600 dark:text-sky-400">
-                <CheckCircle2 className="size-4" />
-              </span>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Completadas</p>
-              <p className="text-2xl font-semibold">{completedTasks}</p>
-            </CardContent>
-          </Card>
-        </section>
-
-        <ViewTasks tasks={tasks} />
+        <TasksDashboard
+          completedTasks={completedTasks}
+          unCompletedTasks={unCompletedTasks}
+        />
       </div>
     </main>
   );
