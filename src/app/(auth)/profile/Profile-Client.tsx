@@ -48,7 +48,7 @@ export default function ProfileClient({
   preferences,
   joinedDate,
 }: ProfileClientProps) {
-  const avatarSrc = image && image.trim().length > 0 ? image : "/auth/default.png";
+  const avatarSrc = image && image.trim().length > 0 ? image : "/auth/defaultProfile.webp";
   const safeName = name.trim() || "Usuario anónimo";
   const router = useRouter();
 

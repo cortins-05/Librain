@@ -52,7 +52,7 @@ const navMain = [
 export async function AppSidebar() {
   const session = await auth.api.getSession({ headers: await headers() });
   const user = session?.user;
-  const avatarSrc = user?.image ?? "/auth/default.png";
+  const avatarSrc = user?.image ?? "/auth/defaultProfile.webp";
   const initials = getInitials(user?.name, user?.email);
 
   return (

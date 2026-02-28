@@ -12,7 +12,7 @@ export default async function ProfilePage() {
 
   const name = user?.name ?? "Anonymous User";
   const email = user?.email ?? "No email available";
-  const image = user?.image ?? "/auth/default.png";
+  const image = user?.image ?? "/auth/defaultProfile.webp";
   const preferences = userMeta?.preferences ?? [];
   const joinedDate = userMeta?.createdAt
     ? new Date(userMeta.createdAt).toLocaleDateString("es-ES", {
