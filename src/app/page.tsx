@@ -82,7 +82,7 @@ export default async function HomePage() {
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild size="lg">
-                <Link href="/actions/addTask">
+                <Link href="/actions/addTask" className="z-10">
                   <Plus />
                   Nueva<span className="text-blue-800">inquietud</span>
                 </Link>
