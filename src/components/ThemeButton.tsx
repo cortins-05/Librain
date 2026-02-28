@@ -31,12 +31,12 @@ export default function ThemeButton() {
     <button
       onClick={handleToggle}
       disabled={isAnimating}
-      className={`relative p-3 rounded-lg transition-all duration-500 ${
+      className={`fixed top-6 right-6 relative p-3 rounded-lg transition-all duration-500 ${
         isAnimating ? "blur-sm" : "blur-0"
       } ${
         isAnimating
-          ? "-translate-y-1"
-          : "translate-y-0 hover:-translate-y-2"
+          ? "-translate-y-1 opacity-30"
+          : "translate-y-0 opacity-30 hover:opacity-100 hover:-translate-y-2"
       } hover:shadow-lg hover:shadow-primary/50 shadow-md active:shadow-sm ${
         isDark
           ? "bg-slate-900 text-yellow-400 hover:bg-slate-800"
