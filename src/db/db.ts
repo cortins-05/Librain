@@ -1,18 +1,17 @@
 import { MongoClient } from "mongodb";
+import { getMongoUri } from "./mongoUri";
 
-const uri = process.env.MONGODB_URI!;
-if (!uri) throw new Error("Missing MONGODB_URI");
+const uri = getMongoUri();
 
 declare global {
   var _mongoClient: MongoClient | undefined;
+  var _mongoClientUri: string | undefined;
 }
 
-export const client =
-  global._mongoClient ?? new MongoClient(uri);
-
-if (process.env.NODE_ENV !== "production") {
-  global._mongoClient = client;
+if (!global._mongoClient || global._mongoClientUri !== uri) {
+  global._mongoClient = new MongoClient(uri);
+  global._mongoClientUri = uri;
 }
 
-// Opcional, por comodidad
-export const db = client.db(); // usa el DB del URI, o client.db("nombre")
+export const client = global._mongoClient;
+export const db = client.db();

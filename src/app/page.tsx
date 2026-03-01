@@ -13,6 +13,7 @@ import StoredModel from "@/db/Models/Task/Task.model";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import TasksDashboard from "@/components/Tasks/TasksDashboard";
+import LoginPreferencesAlert from "@/components/home/LoginPreferencesAlert";
 
 function toIsoOrNow(value: unknown): string {
   if (value instanceof Date) {
@@ -32,12 +33,17 @@ function toIsoOrNow(value: unknown): string {
 export default async function HomePage() {
   await dbConnect();
 
-  const session = await auth.api.getSession({headers: await headers()});
+  const session = await auth.api.getSession({ headers: await headers() });
 
-  const tasksFromDb = await StoredModel
-  .find({ user: session!.user.id })
-  .sort({ score: -1 }) // 👈 mayor a menor
-  .lean();
+  const preferences = Array.isArray(session?.user?.preferences)
+    ? session.user.preferences
+    : [];
+  const shouldWarnAboutPreferences = preferences.length < 4;
+
+  const tasksFromDb = await StoredModel.find({ user: session!.user.id })
+    .sort({ score: -1 })
+    .lean();
+
   const tasks: TaskListItem[] = tasksFromDb.map((task) => ({
     id: String(task._id),
     userId: String(task.user),
@@ -56,11 +62,10 @@ export default async function HomePage() {
   const completedTasks: TaskListItem[] = [];
   const unCompletedTasks: TaskListItem[] = [];
 
-  tasks.forEach(task=>{
-    if(Boolean(task.completedAt)) completedTasks.push(task);
+  tasks.forEach((task) => {
+    if (Boolean(task.completedAt)) completedTasks.push(task);
     else unCompletedTasks.push(task);
-  })
->>>>>>> 770d94b7637dbabedbb4c4ebe0d75c3435be723b
+  });
 
 export default function HomePage() {
   return (
@@ -84,7 +89,10 @@ export default function HomePage() {
             <div className="absolute -right-14 -top-14 h-44 w-44 rounded-full border border-primary/25" />
             <div className="absolute bottom-0 left-0 h-28 w-28 rounded-full bg-primary/10 blur-2xl" />
 
-            <Badge variant="outline" className="mb-4 rounded-full px-3 py-1 text-xs tracking-wide">
+            <Badge
+              variant="outline"
+              className="mb-4 rounded-full px-3 py-1 text-xs tracking-wide"
+            >
               Espacio Librain
             </Badge>
 
@@ -92,9 +100,12 @@ export default function HomePage() {
               Tu panel de recomendaciones inteligentes.
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg font-fira-sans">
-              Reúne ideas, notas y recursos en un solo lugar. Librain los convierte en recomendaciones
-              claras con puntuación y estado para ayudarte a decidir qué ejecutar primero.
+              Reúne ideas, notas y recursos en un solo lugar. Librain los
+              convierte en recomendaciones claras con puntuación y estado para
+              ayudarte a decidir qué ejecutar primero.
             </p>
+
+            <LoginPreferencesAlert shouldWarn={shouldWarnAboutPreferences} />
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild size="lg">

@@ -2,7 +2,7 @@
 import { headers } from "next/headers";
 
 import { auth } from "@/lib/auth";
-import { askLibrainAssistant } from "@/lib/librainGemini";
+import { askLibrainAssistant } from "@/lib/librainOllama";
 
 export const runtime = "nodejs";
 const DEDUPE_WINDOW_MS = 2500;

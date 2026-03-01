@@ -31,6 +31,7 @@ const OLLAMA_METADATA_TIMEOUT_MS = clampInt(
 
 const MAX_ASSISTANT_MESSAGE_CHARS = 1_600;
 const MAX_ASSISTANT_RESPONSE_CHARS = 1_200;
+const MAX_ASSISTANT_RESPONSE_LINES = 8;
 const MAX_METADATA_TEXT_CHARS = 4_500;
 const MAX_USER_PREFERENCES = 8;
 
@@ -58,11 +59,52 @@ Que NO existe ahora:
 Reglas:
 - Si algo no existe, dilo claramente y ofrece alternativa real.
 - No inventes funciones ni endpoints.
-- Respuesta corta por defecto; si el usuario esta bloqueado, da pasos numerados.
+- Respuesta corta por defecto; da pasos numerados.
 - Evita repetir frases o ideas.
+- Suena natural, sin muletillas ni texto robotico.
+- No uses caracteres corruptos o texto ilegible.
 - No uses markdown, tablas ni bloques de codigo.
 - Si falta contexto, haz una sola pregunta corta.
 `;
+
+const SPANISH_HINT_WORDS = new Set([
+  "de",
+  "la",
+  "el",
+  "que",
+  "y",
+  "en",
+  "para",
+  "con",
+  "por",
+  "una",
+  "un",
+  "como",
+  "puedo",
+  "puedes",
+  "te",
+  "tu",
+  "si",
+  "no",
+  "hola",
+  "gracias",
+]);
+
+const ENGLISH_HINT_WORDS = new Set([
+  "the",
+  "and",
+  "is",
+  "are",
+  "this",
+  "that",
+  "for",
+  "with",
+  "you",
+  "your",
+  "can",
+  "cannot",
+  "please",
+]);
 
 function clampInt(
   value: string | undefined,
@@ -84,47 +126,96 @@ function shortText(text: string, max: number) {
   return `${text.slice(0, max)}...`;
 }
 
+function tokenizeWords(text: string) {
+  return text.toLowerCase().match(/[a-z0-9\u00c0-\u024f]+/gi) ?? [];
+}
+
+function normalizeAssistantLine(line: string) {
+  return line
+    .replace(/^(assistant|asistente|librain ai|librain)\s*:\s*/i, "")
+    .replace(/^\d+[\.\)]\s*/, "")
+    .replace(/^[*-]\s*/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isLikelySpanishText(text: string) {
+  const words = tokenizeWords(text);
+  if (words.length < 5) return true;
+
+  let spanishHits = 0;
+  let englishHits = 0;
+
+  for (const word of words) {
+    if (SPANISH_HINT_WORDS.has(word)) spanishHits++;
+    if (ENGLISH_HINT_WORDS.has(word)) englishHits++;
+  }
+
+  if (words.length >= 12 && spanishHits === 0) return false;
+  if (englishHits >= 4 && englishHits > spanishHits * 2) return false;
+
+  return true;
+}
+
 function cleanupAssistantOutput(raw: string) {
   const withoutCodeFences = raw.replace(/```(?:\w+)?/g, "");
   const lines = withoutCodeFences
     .replace(/\r/g, "")
     .split("\n")
-    .map((line) => line.trim())
+    .map((line) => normalizeAssistantLine(line))
     .filter((line) => line.length > 0);
 
   const dedupedAdjacent: string[] = [];
+  const seenLines = new Set<string>();
   for (const line of lines) {
-    if (dedupedAdjacent[dedupedAdjacent.length - 1] !== line) {
+    const fingerprint = line.toLowerCase();
+    if (
+      dedupedAdjacent[dedupedAdjacent.length - 1]?.toLowerCase() !== fingerprint &&
+      !seenLines.has(fingerprint)
+    ) {
       dedupedAdjacent.push(line);
+      seenLines.add(fingerprint);
+      if (dedupedAdjacent.length >= MAX_ASSISTANT_RESPONSE_LINES) break;
     }
   }
 
-  const collapsed = dedupedAdjacent.join("\n").trim();
+  const collapsed = dedupedAdjacent.join("\n").replace(/[ \t]{2,}/g, " ").trim();
   return shortText(collapsed, MAX_ASSISTANT_RESPONSE_CHARS);
 }
 
 function looksBrokenAssistantOutput(text: string) {
-  if (!text || text.length < 2) return true;
+  if (!text || text.length < 6) return true;
   if (/(.)\1{24,}/.test(text)) return true;
+  if (/[\uFFFD]|\u00C3[\x80-\xBF]|\u00C2/.test(text)) return true;
+  if (/contexto de sesion|pregunta del cliente|instruccion final/i.test(text)) return true;
 
   const lines = text
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
-  if (lines.length >= 4) {
-    let repeatedAdjacent = 0;
-    for (let i = 1; i < lines.length; i++) {
-      if (lines[i] === lines[i - 1]) repeatedAdjacent++;
-    }
-    if (repeatedAdjacent >= 2) return true;
+  if (lines.length >= 3) {
+    const normalizedLines = lines.map((line) => line.toLowerCase());
+    const uniqueLineRatio = new Set(normalizedLines).size / normalizedLines.length;
+    if (uniqueLineRatio < 0.65) return true;
   }
 
-  const words = text.toLowerCase().match(/[a-z0-9áéíóúñü]+/gi) ?? [];
-  if (words.length >= 40) {
+  const words = tokenizeWords(text);
+  if (words.length >= 24) {
     const uniqueRatio = new Set(words).size / words.length;
-    if (uniqueRatio < 0.2) return true;
+    if (uniqueRatio < 0.35) return true;
+
+    const counts = new Map<string, number>();
+    let highestCount = 0;
+    for (const word of words) {
+      const next = (counts.get(word) ?? 0) + 1;
+      counts.set(word, next);
+      if (next > highestCount) highestCount = next;
+    }
+    if (highestCount / words.length > 0.26) return true;
   }
+
+  if (!isLikelySpanishText(text)) return true;
 
   return false;
 }
@@ -178,6 +269,57 @@ function extractFirstJsonObject(text: string): string {
 function isSimpleGreeting(message: string) {
   const normalized = message.toLowerCase().trim();
   return /^(hola|buenas|hey|buenos dias|buenas tardes|buenas noches)$/.test(normalized);
+}
+
+function buildStabilizationPrompt(question: string, candidateAnswer: string) {
+  return [
+    "Corrige la respuesta para que suene natural y clara en espanol.",
+    "No inventes funciones de Librain.",
+    "Mantente entre 1 y 4 frases cortas.",
+    "Texto plano, sin markdown ni codigo.",
+    "",
+    `Pregunta del usuario: ${question}`,
+    `Respuesta borrador: ${candidateAnswer}`,
+    "",
+    "Respuesta final:",
+  ].join("\n");
+}
+
+async function stabilizeAssistantOutput(question: string, candidateAnswer: string) {
+  try {
+    const raw = await ollamaChat({
+      system: "Eres un corrector de estilo para respuestas de soporte en Librain.",
+      user: buildStabilizationPrompt(question, candidateAnswer),
+      temperature: 0,
+      numPredict: 170,
+      timeoutMs: OLLAMA_CHAT_TIMEOUT_MS,
+    });
+    return cleanupAssistantOutput(raw);
+  } catch {
+    return "";
+  }
+}
+
+function buildAssistantFallback(question: string) {
+  const normalized = question.toLowerCase();
+
+  if (/\b(editar|modificar|cambiar)\b/.test(normalized)) {
+    return "Ahora mismo no se pueden editar inquietudes ya creadas. Alternativa: elimina la inquietud y crea una nueva desde URL, texto o archivo.";
+  }
+
+  if (/\b(video|youtube|vimeo)\b/.test(normalized) && /\b(archivo|subir|adjuntar)\b/.test(normalized)) {
+    return "Puedes subir PDF, imagen o audio como archivo. El video solo se admite por URL.";
+  }
+
+  if (/\b(foto|nombre|email|perfil|profile)\b/.test(normalized)) {
+    return "En la UI actual solo puedes gestionar preferencias en /profile. El cambio de foto, nombre o email aun no esta disponible.";
+  }
+
+  if (/\b(contrasena|password|recuperar|olvide)\b/.test(normalized)) {
+    return "La recuperacion de contrasena todavia no esta disponible en la UI.";
+  }
+
+  return "Te ayudo con eso. Escribeme en una frase que quieres hacer en Librain y te doy pasos concretos.";
 }
 
 async function ollamaChat(options: {
@@ -280,9 +422,11 @@ export async function askLibrainAssistant({
   ].join("\n");
 
   const attempts = [
-    { temperature: 0.15, numPredict: 220 },
+    { temperature: 0.1, numPredict: 220 },
     { temperature: 0, numPredict: 180 },
+    { temperature: 0, numPredict: 130 },
   ];
+  let bestCandidate = "";
 
   for (const attempt of attempts) {
     try {
@@ -295,6 +439,10 @@ export async function askLibrainAssistant({
       });
 
       const cleaned = cleanupAssistantOutput(raw);
+      if (cleaned.length > bestCandidate.length) {
+        bestCandidate = cleaned;
+      }
+
       if (!looksBrokenAssistantOutput(cleaned)) {
         return cleaned;
       }
@@ -303,7 +451,14 @@ export async function askLibrainAssistant({
     }
   }
 
-  return "Ahora mismo no pude generar una respuesta estable. Prueba a reformular la pregunta en una sola frase.";
+  if (bestCandidate.length > 0) {
+    const stabilized = await stabilizeAssistantOutput(cleanUserMessage, bestCandidate);
+    if (stabilized.length > 0 && !looksBrokenAssistantOutput(stabilized)) {
+      return stabilized;
+    }
+  }
+
+  return buildAssistantFallback(cleanUserMessage);
 }
 
 export async function generateStoredMetadata(
