@@ -67,11 +67,9 @@ export default function ProfileClient({
   const [preferenceName, setPreferenceName] = useState<string|null>(null);
 
   const [showDeletePreference, setShowDeletePreference] = useState<string|null>(null);
-  const [preferenceToDelete, setPreferenceToDelete] = useState<string|null>(null);
 
   async function deletePreference(name:string){
     await deletePreferenceAction(name);
-    setPreferenceToDelete(null);
     router.refresh();
   }
 
@@ -182,7 +180,7 @@ export default function ProfileClient({
                         &&
                         <AlertDialog>
                           <AlertDialogTrigger className="blur-out" asChild>
-                            <button onClick={()=>setPreferenceToDelete(preference)}> <Trash /> </button>
+                            <button> <Trash /> </button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
@@ -194,7 +192,7 @@ export default function ProfileClient({
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel onClick={()=>setPreferenceToDelete(null)}>Cancelar</AlertDialogCancel>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
                               <AlertDialogAction onClick={()=>deletePreference(preference)} variant="destructive">
                                 Eliminar
                               </AlertDialogAction>

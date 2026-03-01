@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 import { toggleCompletedAction } from "@/actions/tasks/toggleCompleted";
-import type { TaskListItem } from "./types";
+import type { TaskListItem } from "../../types/types";
 
 function safeDateLabel(value: string) {
   const date = new Date(value);

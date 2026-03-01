@@ -4,7 +4,6 @@ const uri = process.env.MONGODB_URI!;
 if (!uri) throw new Error("Missing MONGODB_URI");
 
 declare global {
-  // eslint-disable-next-line no-var
   var _mongoClient: MongoClient | undefined;
 }
 
