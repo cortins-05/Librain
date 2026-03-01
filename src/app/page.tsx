@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { ArrowRight, Plus } from "lucide-react";
-import type { TaskListItem } from "@/components/Tasks/types";
+import type { TaskListItem } from "@/types/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { dbConnect } from "@/db/dbConnect";

@@ -5,7 +5,7 @@ import { Types } from "mongoose";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { extractText, getDocumentProxy, getMeta } from "unpdf";
 
-import StoredModel from "@/db/Models/Task/Task.model";
+import StoredModel, { IStored } from "@/db/Models/Task/Task.model";
 import { dbConnect } from "@/db/dbConnect";
 import { generateStoredMetadata } from "@/lib/gemini";
 import AudioExtract from "@/lib/ExtractInfo/Audio.extract";
@@ -202,6 +202,7 @@ export async function POST(req: Request) {
     let value = "";
     let description = "";
     let extracted: Extracted | undefined;
+    let uploadedFile: File | null = null;
 
     // --------- FILE (FormData) ---------
     if (contentType.includes("multipart/form-data")) {
@@ -216,6 +217,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "No se proporcionó ningún archivo" }, { status: 400 });
       }
 
+      uploadedFile = file;
       const kind = guessKindFromFile(file);
 
       if (!value) value = file.name;
@@ -277,8 +279,22 @@ export async function POST(req: Request) {
     const preferences = session.user.preferences;
 
     const aiData = await generateStoredMetadata(extracted.text, preferences, description);
+    
+    console.log('📝 Metadata generada para nueva tarea:', {
+      name: aiData.name,
+      score: aiData.score,
+      tags: aiData.tags,
+      preferences: preferences
+    });
 
     const score = Number.isFinite(aiData.score) ? Math.max(0, Math.min(100, aiData.score)) : 0;
+
+    // Preparar campos de contenido original para reanálisis
+    let sourceType: IStored["sourceType"] = resource === "url" ? "url" : resource === "text" ? "text" : "file";
+    if (extracted.kind === "pdf") sourceType = "pdf";
+    else if (extracted.kind === "image") sourceType = "image";
+    else if (extracted.kind === "video") sourceType = "video";
+    else if (extracted.kind === "audio") sourceType = "audio";
 
     const storedDoc = await StoredModel.create({
       user: new Types.ObjectId(session.user.id),
@@ -286,7 +302,16 @@ export async function POST(req: Request) {
       score,
       description: description ?? "",
       descriptionIA: aiData.descriptionIA,
+      tags: aiData.tags ?? [],
+      // Guardar contenido original para reanálisis
+      sourceType,
+      sourceContent: extracted.text,
+      sourceUrl: resource === "url" ? value : undefined,
+      sourceMimeType: uploadedFile?.type,
+      sourceFileName: contentType.includes("multipart/form-data") ? value : undefined,
     });
+    
+    console.log('✅ Tarea creada con ID:', storedDoc._id, '| Contenido original guardado para reanálisis');
 
     return NextResponse.json({
       stored: { _id: storedDoc._id },

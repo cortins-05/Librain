@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, ListTodo } from "lucide-react";
 
 import ViewTasks from "@/components/Tasks/ViewTasks";
-import type { TaskListItem } from "@/components/Tasks/types";
+import type { TaskListItem } from "@/types/types";
 import { Button } from "@/components/ui/button";
 
 type Props = {

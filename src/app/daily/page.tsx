@@ -69,7 +69,10 @@ export default async function DailyTaskPage() {
     );
   }
 
-  const topTask = await StoredModel.findOne({ user: session.user.id })
+  const topPendingTask = await StoredModel.findOne({
+    user: session.user.id,
+    $or: [{ completedAt: { $exists: false } }, { completedAt: null }],
+  })
     .sort({ score: -1, createdAt: -1 })
     .lean<{
       _id: unknown;
@@ -106,7 +109,7 @@ export default async function DailyTaskPage() {
           </div>
         </section>
 
-        {!topTask ? (
+        {!topPendingTask ? (
           <Card className="animate-in fade-in-0 slide-in-from-bottom-4 border-border/70 bg-card/80 backdrop-blur duration-500 [animation-delay:70ms]">
             <CardContent className="space-y-4 p-8">
               <span className="inline-flex rounded-lg border border-primary/20 bg-primary/10 p-2 text-primary">
@@ -128,19 +131,19 @@ export default async function DailyTaskPage() {
         ) : (
           (() => {
             const name =
-              typeof topTask.name === "string" && topTask.name.trim().length > 0
-                ? topTask.name.trim()
+              typeof topPendingTask.name === "string" && topPendingTask.name.trim().length > 0
+                ? topPendingTask.name.trim()
                 : "Recomendación sin título";
-            const description = typeof topTask.description === "string" ? topTask.description : "";
+            const description = typeof topPendingTask.description === "string" ? topPendingTask.description : "";
             const descriptionIA =
-              typeof topTask.descriptionIA === "string" ? topTask.descriptionIA : "";
-            const score = normalizeScore(topTask.score);
+              typeof topPendingTask.descriptionIA === "string" ? topPendingTask.descriptionIA : "";
+            const score = normalizeScore(topPendingTask.score);
             const category =
-              typeof topTask.category === "string" && topTask.category.trim().length > 0
-                ? topTask.category.trim()
+              typeof topPendingTask.category === "string" && topPendingTask.category.trim().length > 0
+                ? topPendingTask.category.trim()
                 : null;
-            const createdAt = safeDateLabel(topTask.createdAt);
-            const completedAt = topTask.completedAt ? safeDateLabel(topTask.completedAt) : "Pendiente";
+            const createdAt = safeDateLabel(topPendingTask.createdAt);
+            const completedAt = topPendingTask.completedAt ? safeDateLabel(topPendingTask.completedAt) : "Pendiente";
 
             return (
               <Card className="group relative overflow-hidden border border-border/70 bg-card/80 shadow-sm backdrop-blur transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4 [animation-delay:70ms]">

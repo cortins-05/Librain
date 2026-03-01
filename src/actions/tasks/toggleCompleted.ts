@@ -17,11 +17,29 @@ export async function toggleCompletedAction(id: string) {
     throw new Error("Inquietud no encontrada");
   }
 
+  const isNowCompleted = !task.completedAt;
+
+  const updateQuery: {
+    $set: { completedAt: Date | null };
+    $unset?: Record<string, 1>;
+  } = {
+    $set: { completedAt: isNowCompleted ? new Date() : null }
+  };
+  
+  // Si se marca como completada, limpiar contenido original para liberar espacio
+  if (isNowCompleted) {
+    console.log(`🧹 Tarea completada, limpiando contenido original guardado...`);
+    updateQuery.$unset = {
+      sourceContent: 1,
+      sourceUrl: 1,
+      sourceMimeType: 1,
+      sourceFileName: 1,
+    };
+  }
+  
   const updated = await StoredModel.findByIdAndUpdate(
     id,
-    {
-      completedAt: task.completedAt ? null : new Date(),
-    },
+    updateQuery,
     { new: true }
   ).select("completedAt");
 
