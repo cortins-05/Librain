@@ -79,8 +79,7 @@ export default function AboutPage() {
               Convierte información suelta en recomendaciones accionables.
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg font-fira-sans">
-              Librain centraliza lo que guardas durante el día y lo transforma en decisiones claras:
-              resumen IA, estado de madurez y prioridad para que sepas qué hacer primero.
+              Librain recuerda lo que guardas durante el día y lo transforma en decisiones claras gracias a un asistente de IA.
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
