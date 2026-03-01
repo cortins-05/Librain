@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, ClipboardList, LightbulbIcon, Sparkles } from "lucide-react";
 
 import TaskView from "./TaskView";
-import type { TaskListItem } from "./types";
+import type { TaskListItem } from "../../types/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
