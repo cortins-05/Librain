@@ -18,8 +18,11 @@ export async function toggleCompletedAction(id: string) {
   }
 
   const isNowCompleted = !task.completedAt;
-  
-  let updateQuery: any = {
+
+  const updateQuery: {
+    $set: { completedAt: Date | null };
+    $unset?: Record<string, 1>;
+  } = {
     $set: { completedAt: isNowCompleted ? new Date() : null }
   };
   

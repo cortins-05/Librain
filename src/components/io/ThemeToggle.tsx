@@ -1,19 +1,15 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { MoonIcon, SunIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '../ui/button'
 
 const ThemeToggle = ({ className }: { className?: string }) => {
   const { setTheme, resolvedTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
   const [animState, setAnimState] = useState<'idle' | 'out' | 'in'>('idle')
   const [ripple, setRipple] = useState<{ x: number; y: number; color: string } | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
-
-  // ✅ Solo se ejecuta en el cliente — evita el hydration mismatch
-  useEffect(() => setMounted(true), [])
 
   const isDark = resolvedTheme === 'dark'
 
@@ -47,7 +43,7 @@ const ThemeToggle = ({ className }: { className?: string }) => {
     : 0
 
   // ✅ Render idéntico en servidor y primer render cliente — sin iconos, sin aria-label dinámico
-  if (!mounted) {
+  if (!resolvedTheme) {
     return (
       <Button
         className={`relative overflow-hidden transition-colors duration-300 ${className}`}

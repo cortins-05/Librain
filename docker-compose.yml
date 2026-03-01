@@ -2,26 +2,33 @@ services:
   mongodb:
     image: mongo:7
     container_name: librainDB
-    restart: always
+    restart: unless-stopped
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: 1234
+      # Local-dev defaults live in .env (do not commit real secrets)
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-admin}
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok' | grep 1 >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   ollama:
     image: ollama/ollama:latest
     container_name: librainOllama
-    restart: always
-    tty: true
-    stdin_open: true
+    restart: unless-stopped
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     environment:
+      # Bind to all interfaces inside the container so port mapping works reliably
+      # See Ollama docs: OLLAMA_HOST can be set to 0.0.0.0:11434
+      - OLLAMA_HOST=0.0.0.0:11434
       - OLLAMA_KEEP_ALIVE=24h
     healthcheck:
       test: ["CMD", "ollama", "list"]
@@ -29,6 +36,8 @@ services:
       timeout: 3s
       retries: 30
 
+  # One-shot container to pre-pull a default open-source model for local runs.
+  # You can change the model via OLLAMA_DEFAULT_MODEL in .env
   ollama-pull:
     image: ollama/ollama:latest
     container_name: librainOllamaPull
@@ -37,6 +46,7 @@ services:
         condition: service_healthy
     environment:
       - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_DEFAULT_MODEL=${OLLAMA_DEFAULT_MODEL:-qwen2.5:0.5b-instruct}
     volumes:
       - ollama_data:/root/.ollama
     entrypoint: []
@@ -45,8 +55,8 @@ services:
       - -lc
       - >
         set -e;
-        echo "[ollama-pull] descargando qwen2.5:0.5b-instruct...";
-        ollama pull qwen2.5:0.5b-instruct;
+        echo "[ollama-pull] pulling ${OLLAMA_DEFAULT_MODEL}...";
+        ollama pull "${OLLAMA_DEFAULT_MODEL}";
         echo "[ollama-pull] ok";
     restart: "no"
 

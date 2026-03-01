@@ -1,156 +1,203 @@
-﻿# Librain
+# Librain — AI that decides your next best action
 
-Librain es una aplicación Next.js 16 enfocada en convertir entradas no estructuradas (URL, texto, archivos) en prioridades accionables usando IA.
+> **HackUDC · GPUL Tracks**
+>
+> - **Best Open Source Project** (built to be shared, improved, and sustained)
+> - **Best Use of Open Source AI** (local OSS models via Ollama)
+>
+> Librain turns unstructured inputs (URLs, text, files) into **actionable knowledge** and recommends the **single best next action** based on your preferences.
 
-Combina:
 
-- Espacio de trabajo personal autenticado.
-- Generación de metadatos de tareas asistida por IA (título, estado de madurez, puntuación, resumen breve).
-- Recomendación diaria basada en la puntuación de prioridad.
-- Asistente integrado en la app (Librain AI) con orientación sobre el producto.
+## Live Demo
 
-## 1) Alcance del producto
+- Production: https://librain.vercel.app
 
-### Qué hace actualmente la app
 
-- Autenticación de usuario con email/contraseña, Google y GitHub (Better Auth).
-- Espacio de trabajo protegido con aislamiento de tareas por usuario.
-- Ingesta de tareas desde:
+## Why Librain
+
+Most productivity tools help you *store* tasks. The real pain happens earlier:
+
+**The hardest step is deciding what to do next.**
+That first decision creates friction, procrastination, and mental clutter.
+
+**Librain removes the decision cost** by using AI + your preferences to score and rank your initiatives, then surfaces the optimal next step (starting with a daily “Top 1”).
+
+---
+
+## What it does (today)
+
+- **Frictionless capture** from:
   - URL
-  - Texto libre
-  - Archivo (PDF, imagen, audio)
-- Enriquecimiento IA para cada tarea:
-  - `name`
-  - `score` (`0-100`)
-  - `descriptionIA` (resumen breve)
-- Acciones sobre el ciclo de vida de la tarea:
-  - alternar completado
-  - eliminar tarea
-- Vista diaria mostrando la tarea de mayor prioridad.
-- Página de perfil con preferencias editables.
-- Chat Librain AI embebido para soporte sobre el producto.
+  - free text
+  - files: **PDF / image / audio**
+- **AI enrichment** for each item:
+  - `name` (title)
+  - `state` (maturity stage)
+  - `score` (0–100)
+  - `descriptionIA` (short actionable summary)
+- **Decision-first experience**
+  - Home sorted by `score desc`
+  - Daily view that highlights your **Top 1** priority
+- **Private workspace**
+  - Authentication with email/password, Google and GitHub
+  - Per-user isolation of stored items
+- **LibrainAI** embedded assistant to guide usage inside the app
 
-### Qué no hace actualmente la app
+---
 
-- Editar tareas existentes (no hay endpoint PUT/PATCH de tarea).
-- Cambiar foto de perfil, nombre de usuario o email desde la UI.
-- Cambiar contraseña o eliminar cuenta desde la UI.
-- Subir archivo de video directamente a `/api/task` (solo URL de video).
-- Extraer y resumir automáticamente páginas web genéricas desde URL.
-- Acciones masivas, filtrado avanzado, exportar/importar, recordatorios, notificaciones.
-- Historial de chat persistente tras recargar/cerrar sesión.
+## HackUDC award alignment
 
-## 2) Resumen de arquitectura
+### ✅ Best Open Source Project (spirit + maintainability)
 
-### Runtime y framework
 
-- Next.js `16.1.6` (App Router).
-- React `19.2.3`.
-- Node.js para rutas API (`runtime = "nodejs"`).
+| Criteria               | How Librain meets it                                                     |
+| ---------------------- | ------------------------------------------------------------------------ |
+| Documentation          | Clear README, quickstart, architecture & API docs                        |
+| Licensing & standards  | MIT License, standard repo files, templates                              |
+| Contribution readiness | CONTRIBUTING, issue templates, PR template                               |
+| Code quality           | Modular extraction pipeline + typed domain models                        |
+| Utility                | Solves a real problem: reduces decision friction by deciding next action |
 
-### Datos y autenticación
+### ✅ Best Use of Open Source AI (transparency + local-first)
 
-- MongoDB vía:
-  - driver `mongodb` para el adaptador Better Auth (`src/db/db.ts`)
-  - `mongoose` para el modelo de dominio de tareas (`src/db/dbConnect.ts`, `src/db/Models/Task/Task.model.ts`)
-- Better Auth gestiona endpoints de sesión/autenticación en `src/app/api/auth/[...all]/route.ts`.
-- Protección de rutas gestionada por `src/proxy.ts`.
+We use a **multi-provider AI layer**:
 
-### Proveedores IA
+- **Ollama (Docker)** to run **open-source models locally** (local-first mode)
+- **Google Gemini** as a cloud provider option
+- **ChatGPT (OpenAI)** as a cloud provider option
 
-- Google Gemini (`@google/generative-ai`):
-  - puntuación/clasificación de metadatos de tarea (`src/lib/gemini.ts`)
-  - respuestas del asistente (`src/lib/librainGemini.ts`)
-  - interpretación de URL de video en `/api/task`.
-- Groq (`groq-sdk`):
-  - análisis de imagen / extracción tipo OCR
-  - transcripción de audio.
+See **AI_TRANSPARENCY.md** for details on providers, configuration and how to run with Ollama.
 
-### Flujo alto nivel (creación de tarea)
+---
 
-1. El cliente envía la entrada desde `src/components/AddTask/mainComponent.tsx`.
-2. `POST /api/task` valida autenticación/sesión y normaliza la entrada.
-3. Extracción de contenido por tipo:
-   - PDF vía `unpdf`
-   - imagen vía modelo de visión Groq
-   - audio vía Groq Whisper
-   - video vía Gemini solo si la URL apunta a extensión de video
-   - URL genérica => se almacena como texto plano `URL: ...`
-4. El texto extraído se envía a `generateStoredMetadata(...)`.
-5. La tarea se persiste en MongoDB con los metadatos calculados.
-6. La página principal (`/`) lee las tareas ordenadas por `score desc`.
+## Quickstart (local)
 
-### Flujo alto nivel (asistente)
+### Prerequisites
 
-1. El usuario envía mensaje en `src/components/IAButton.tsx`.
-2. `POST /api/librain-assistant` valida sesión, normaliza historial, inyecta contexto de ruta + preferencias.
-3. `askLibrainAssistant(...)` genera respuesta con conocimiento del producto + restricciones.
+- Node.js **20+**
+- pnpm (recommended)
+- Docker (for local MongoDB)
+- (Optional) Docker for **Ollama** local LLM mode
 
-## 3) Estructura del repositorio
+### 1) Install dependencies
+
+```bash
+npm install
+```
+
+### 2) Start MongoDB
+
+```bash
+docker compose up -d mongodb
+```
+
+### 3) Configure environment
+
+Create `.env` from `.env.template` and fill the required values.
+
+### 4) Run the app
+
+```bash
+npm run dev
+```
+
+Open: http://localhost:3000
+
+---
+
+## How “decision” works (scoring)
+
+Librain assigns every initiative a `score (0–100)` and sorts your inbox by priority.
+
+The score is computed using:
+
+- **Signals extracted from the content** (what it is, implied urgency/actionability, etc.)
+- **User preferences** (anything the user considers meaningful: interests, goals, priorities, personal lines of thought)
+- **State / maturity** (to push “next steps” over vague raw inputs)
+
+> The goal is not just ranking—it's producing a *next action* that reduces decision fatigue.
+
+---
+
+## Privacy note
+
+- **Only AI-extracted content is stored** (not the raw original file).
+- AI providers will process extracted text to generate metadata and summaries.
+
+---
+
+## Architecture (overview)
+
+**Next.js App Router (Node.js runtime)** + MongoDB + multimodal AI.
+
+### High-level flow — Create a task
+
+1. Client sends input (URL / text / file)
+2. `POST /api/task` validates session and normalizes input
+3. Extraction per type:
+   - PDF: `unpdf`
+   - Image: vision (OCR-like extraction)
+   - Audio: transcription
+   - Video URL: interpreted when URL points to a video extension
+   - Generic URL: stored as plain text `URL: ...` (roadmap: safe web extraction)
+4. Extracted text goes to `generateStoredMetadata(...)`
+5. Task is saved in MongoDB
+6. UI reads tasks sorted by `score desc`
+
+### Diagram (conceptual)
+
+```mermaid
+flowchart LR
+  U[User] --> C[Capture: URL / Text / File]
+  C --> API[Next.js API /api/task]
+  API --> X[Extraction pipeline]
+  X --> AI[AI metadata: score/state/summary]
+  AI --> DB[(MongoDB)]
+  DB --> UI[UI sorted by score + Daily Top 1]
+```
+
+---
+
+## Repository structure
 
 ```text
+.github/
 src/
   app/
-    (auth)/
-      login/
-      register/
-      profile/
-    actions/addTask/
-    about/
-    daily/
     api/
-      auth/[...all]/route.ts
-      task/route.ts
-      task/[id]/route.ts
-      librain-assistant/route.ts
-    layout.tsx
-    page.tsx
   actions/
-    profile/managePreferences.ts
-    tasks/toggleCompleted.ts
   components/
-    AddTask/mainComponent.tsx
-    Tasks/
-    io/
-    IAButton.tsx
-    app-sidebar.tsx
   db/
-    Models/Task/Task.model.ts
-    db.ts
-    dbConnect.ts
   lib/
-    auth.ts
-    auth-client.ts
-    gemini.ts
-    librainGemini.ts
-    ExtractInfo/
 proxy.ts
 ```
 
-## 4) Contratos de API
+---
+
+## API contracts (summary)
 
 ### `POST /api/task`
 
-Crea una tarea desde JSON (`url|text`) o multipart (`file`).
+Create a task from JSON (`url|text`) or multipart (`file`).
 
-#### Cuerpo JSON
+**JSON**
 
 ```json
 {
   "resource": "url | text",
   "value": "...",
-  "description": "contexto opcional"
+  "description": "optional context"
 }
 ```
 
-#### Cuerpo multipart
+**Multipart**
 
 - `resource = file`
 - `description`
-- `value` (nombre de archivo)
+- `value` (filename)
 - `file`
 
-#### Respuesta exitosa
+**Success response**
 
 ```json
 {
@@ -161,11 +208,9 @@ Crea una tarea desde JSON (`url|text`) o multipart (`file`).
 
 ### `DELETE /api/task/:id`
 
-Elimina una tarea propiedad del usuario autenticado actual.
+Delete a task owned by the authenticated user.
 
 ### `POST /api/librain-assistant`
-
-Cuerpo:
 
 ```json
 {
@@ -175,80 +220,67 @@ Cuerpo:
 }
 ```
 
-Respuesta:
+Response:
 
 ```json
 { "answer": "..." }
 ```
 
-### `GET|POST|DELETE /api/auth/*`
+---
 
-Gestionado por el handler Better Auth.
-
-## 5) Variables de entorno
-
-Configura estas variables antes de ejecutar la app:
+## Environment variables
 
 
-| Variable               | Requerido                             | Descripción                                           |
-| ---------------------- | ------------------------------------- | ------------------------------------------------------ |
-| `BETTER_AUTH_SECRET`   | Sí                                   | Secreto usado por Better Auth.                         |
-| `BETTER_AUTH_URL`      | Sí                                   | URL base pública (ejemplo:`https://app.ejemplo.com`). |
-| `MONGODB_URI`          | Sí                                   | Cadena de conexión Mongo.                             |
-| `GITHUB_CLIENT_ID`     | Opcional                              | Solo requerido si se habilita login con GitHub.        |
-| `GITHUB_CLIENT_SECRET` | Opcional                              | Solo requerido si se habilita login con GitHub.        |
-| `GOOGLE_CLIENT_ID`     | Opcional                              | Solo requerido si se habilita login con Google.        |
-| `GOOGLE_CLIENT_SECRET` | Opcional                              | Solo requerido si se habilita login con Google.        |
-| `GROQ_API_KEY`         | Sí (para imagen/audio)               | API key de Groq para extracción multimodal.           |
-| `GEMINI_API_KEY`       | Sí (para puntuación/chat/video URL) | API key de Gemini para metadatos y asistente.          |
+| Variable                        |         required | Description               |
+| ------------------------------- | ---------------: | ------------------------- |
+| `BETTER_AUTH_SECRET`            |         required | Better Auth secret        |
+| `BETTER_AUTH_URL`               |         required | Public base URL           |
+| `MONGODB_URI`                   |         required | MongoDB connection string |
+| `GITHUB_CLIENT_ID`              |         required | GitHub OAuth              |
+| `GITHUB_CLIENT_SECRET`          |         required | GitHub OAuth              |
+| `GOOGLE_CLIENT_ID`              |         required | Google OAuth              |
+| `GOOGLE_CLIENT_SECRET`          |         required | Google OAuth              |
+| `GROQ_API_KEY`                  | ✅ (image/audio) | Multimodal extraction     |
+| `GEMINI_API_KEY`                |        optional* | Gemini metadata/assistant |
+| *(optional: Ollama local mode)* |                  | see`AI_TRANSPARENCY.md`   |
 
-## 6) Desarrollo local
+---
 
-### Prerrequisitos
+## Contributing
 
-- Node.js 20+
-- pnpm (recomendado)
-- Docker (para MongoDB local)
+We welcome issues and pull requests.
 
-### Pasos
+- Read **CONTRIBUTING.md**
+- Look for issues labeled **good first issue** / **help wanted**
+- Keep changes small, typed, and documented
 
-1. Instala dependencias:
-   ```bash
-   pnpm install
-   ```
-2. Inicia MongoDB:
-   ```bash
-   docker compose up -d mongodb
-   ```
-3. Crea `.env` desde `.env.template` y completa los valores requeridos.
-4. Ejecuta la app:
-   ```bash
-   pnpm dev
-   ```
-5. Abre `http://localhost:3000`.
+---
 
-## 7) Despliegue en producción
+## Roadmap (post-hackathon)
 
-### Despliegue en contenedor
+- Safe web-page extraction for generic URLs (scraping + parsing + citations)
+- Export / import from UI (data control)
+- Bulk actions + advanced filtering
+- Notifications / reminders
+- Persisted assistant chats (opt-in)
 
-- Construye la imagen:
-  ```bash
-  docker build -t librain:latest .
-  ```
-- Ejecuta el contenedor con variables de entorno de producción:
-  ```bash
-  docker run -p 3000:3000 --env-file .env librain:latest
-  ```
+---
 
-El Dockerfile ya usa build multi-etapa y usuario no root (`nextjs`).
+## Team
 
-### Despliegue sin contenedor
+- **Lucas Ortins Méndez**
+- **Diego González Soto**
+- **Nicolás Outerelo**
 
-- Construye:
-  ```bash
-  pnpm build
-  ```
-- Inicia:
-  ```bash
-  pnpm start
-  ```
+---
+
+## License
+
+MIT — see **LICENSE**.
+
+---
+
+## Security
+
+Please report vulnerabilities privately: **lucasortins@gmail.com**
+See **SECURITY.md** for the process.

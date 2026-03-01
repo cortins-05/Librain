@@ -202,6 +202,7 @@ export async function POST(req: Request) {
     let value = "";
     let description = "";
     let extracted: Extracted | undefined;
+    let uploadedFile: File | null = null;
 
     // --------- FILE (FormData) ---------
     if (contentType.includes("multipart/form-data")) {
@@ -216,6 +217,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "No se proporcionó ningún archivo" }, { status: 400 });
       }
 
+      uploadedFile = file;
       const kind = guessKindFromFile(file);
 
       if (!value) value = file.name;
@@ -305,7 +307,7 @@ export async function POST(req: Request) {
       sourceType,
       sourceContent: extracted.text,
       sourceUrl: resource === "url" ? value : undefined,
-      sourceMimeType: contentType.includes("multipart/form-data") ? (req as any).file?.type : undefined,
+      sourceMimeType: uploadedFile?.type,
       sourceFileName: contentType.includes("multipart/form-data") ? value : undefined,
     });
     
