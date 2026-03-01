@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertDialog,
@@ -15,41 +14,20 @@ import {
 
 interface LoginPreferencesAlertProps {
   shouldWarn: boolean;
-  sessionId: string | null;
 }
 
-function getStorageKey(sessionId: string) {
-  return `librain:home:preferences-alert:${sessionId}`;
-}
-
-export default function LoginPreferencesAlert({
-  shouldWarn,
-  sessionId,
-}: LoginPreferencesAlertProps) {
+export default function LoginPreferencesAlert({ shouldWarn }: LoginPreferencesAlertProps) {
   const router = useRouter();
-  const [defaultOpen] = useState(() => {
-    if (!shouldWarn || !sessionId || typeof window === "undefined") {
-      return false;
-    }
-
-    const storageKey = getStorageKey(sessionId);
-    const alreadyShown = window.sessionStorage.getItem(storageKey) === "1";
-    if (alreadyShown) return false;
-
-    window.sessionStorage.setItem(storageKey, "1");
-    return true;
-  });
-
   if (!shouldWarn) return null;
 
   return (
-    <AlertDialog defaultOpen={defaultOpen}>
+    <AlertDialog defaultOpen>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>IMPORTANTE</AlertDialogTitle>
           <AlertDialogDescription>
             Para el correcto funcionamiento de esta web, es imprescindible que
-            fijes como mínimo 4 preferencias.
+            fijes como minimo 4 preferencias.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

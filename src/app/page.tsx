@@ -37,12 +37,6 @@ export default async function HomePage() {
     : [];
   const shouldWarnAboutPreferences = preferences.length < 4;
 
-  const rawSession = session?.session as { id?: unknown } | undefined;
-  const sessionId =
-    typeof rawSession?.id === "string" && rawSession.id.length > 0
-      ? rawSession.id
-      : null;
-
   const tasksFromDb = await StoredModel.find({ user: session!.user.id })
     .sort({ score: -1 })
     .lean();
@@ -97,10 +91,7 @@ export default async function HomePage() {
               ayudarte a decidir qué ejecutar primero.
             </p>
 
-            <LoginPreferencesAlert
-              shouldWarn={shouldWarnAboutPreferences}
-              sessionId={sessionId}
-            />
+            <LoginPreferencesAlert shouldWarn={shouldWarnAboutPreferences} />
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild size="lg">
