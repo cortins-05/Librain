@@ -30,7 +30,9 @@ export const metadata: Metadata = {
   title: "Librain",
   description: "Para mentes abiertas",
   icons: {
-    icon: "/icon.jpeg",
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
   },
 };
 
